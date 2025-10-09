@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('laudos', function (Blueprint $table) {
             $table->id()->ulid();
+            // usuario_id = ID do usuário que CRIOU o laudo (não necessariamente o paciente)
             $table->foreignId('usuario_id')->constrained('usuarios')->onDelete('set null')->nullable();
             $table->string('titulo');
             $table->text('descricao')->nullable();

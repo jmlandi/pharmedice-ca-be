@@ -1,52 +1,114 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Pharmedice Customer Area - Backend
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+> API REST para o sistema de área do cliente da Pharmedice, desenvolvida em Laravel com autenticação JWT e integração AWS S3.
 
-## About Laravel
+## ⚡ Quick Start
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+```bash
+# 1. Instalar dependências
+composer install
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+# 2. Configurar ambiente
+cp .env.example .env
+# Edite o .env com suas configurações
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+# 3. Gerar chaves
+php artisan key:generate
+php artisan jwt:secret
 
-## Learning Laravel
+# 4. Configurar banco
+php artisan migrate
+php artisan db:seed
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+# 5. Iniciar servidor
+php artisan serve
+```
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+## 🚀 Tecnologias
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- **Laravel 11** - Framework PHP
+- **PostgreSQL** - Banco de dados principal
+- **JWT Auth** - Autenticação via tokens
+- **AWS S3** - Armazenamento de arquivos PDF
 
-## Laravel Sponsors
+## 📋 Funcionalidades
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+- ✅ **Autenticação JWT** completa (login/logout/refresh)
+- ✅ **Gestão de usuários** (administradores e clientes)
+- ✅ **Gestão de laudos** com upload de PDF
+- ✅ **Consulta pública** de laudos por qualquer usuário autenticado
+- ✅ **Busca avançada** por título e nome do arquivo
+- ✅ **Integração AWS S3** para armazenamento seguro
+- ✅ **API RESTful** padronizada
 
-### Premium Partners
+## 👥 Usuários de Teste
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+Após executar `php artisan db:seed`:
 
-## Contributing
+- **Admin**: `admin@pharmedice.com` / `admin123`
+- **Cliente**: `joao@exemplo.com` / `123456`
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## 📚 Documentação
+
+- **[📋 API Reference](./docs/api/README.md)** - Documentação completa da API
+- **[🛠️ Setup Guide](./docs/setup/README.md)** - Guia detalhado de instalação  
+- **[💡 Concepts](./docs/concepts/)** - Conceitos e arquitetura do sistema
+- **[📝 Changelogs](./docs/changelogs/)** - Histórico de mudanças
+
+## 🚀 Exemplo de Uso
+
+```bash
+# 1. Login
+curl -X POST http://localhost:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@pharmedice.com","senha":"admin123"}'
+
+# 2. Usar o token retornado
+curl -X GET http://localhost:8000/api/laudos \
+  -H "Authorization: Bearer SEU_TOKEN_AQUI"
+
+# 3. Buscar laudos
+curl -X GET "http://localhost:8000/api/laudos/buscar?busca=exame" \
+  -H "Authorization: Bearer SEU_TOKEN_AQUI"
+```
+
+## 🏗️ Arquitetura
+
+```
+app/
+├── DTOs/              # Data Transfer Objects
+├── Http/Controllers/  # Controllers da API  
+├── Http/Middleware/   # Middlewares de autenticação
+├── Models/           # Models Eloquent
+├── Services/         # Lógica de negócio
+└── ...
+
+docs/                 # 📚 Documentação organizada
+├── api/             # Documentação da API
+├── setup/           # Guias de instalação
+├── concepts/        # Conceitos do sistema
+└── changelogs/      # Histórico de mudanças
+```
+
+## � Segurança
+
+- ✅ JWT Authentication com refresh tokens
+- ✅ Role-based access control (Admin/Cliente)
+- ✅ Validação rigorosa de arquivos PDF
+- ✅ Armazenamento seguro no AWS S3
+- ✅ Hash de senhas com bcrypt
+
+## 🤝 Contribuição
+
+1. Fork o projeto
+2. Crie sua branch (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
+
+## � Licença
+
+Distribuído sob a licença MIT. Veja `LICENSE` para mais informações.
 
 ## Code of Conduct
 
