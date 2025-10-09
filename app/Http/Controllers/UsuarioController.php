@@ -115,17 +115,17 @@ class UsuarioController extends Controller
     {
         try {
             $rules = [
-                'primeiro_nome' => 'required|string|max:255',
-                'segundo_nome' => 'required|string|max:255',
-                'apelido' => 'required|string|max:255',
-                'email' => 'required|email|max:255|unique:usuarios,email,' . $id,
-                'telefone' => 'required|string|max:20',
-                'numero_documento' => 'required|string|max:20|unique:usuarios,numero_documento,' . $id,
-                'data_nascimento' => 'required|date',
-                'tipo_usuario' => 'in:administrador,usuario',
-                'aceite_comunicacoes_email' => 'boolean',
-                'aceite_comunicacoes_sms' => 'boolean',
-                'aceite_comunicacoes_whatsapp' => 'boolean',
+                'primeiro_nome' => 'sometimes|required|string|max:255',
+                'segundo_nome' => 'sometimes|required|string|max:255',
+                'apelido' => 'sometimes|required|string|max:255',
+                'email' => 'sometimes|required|email|max:255|unique:usuarios,email,' . $id,
+                'telefone' => 'sometimes|required|string|max:20',
+                'numero_documento' => 'sometimes|required|string|max:20|unique:usuarios,numero_documento,' . $id,
+                'data_nascimento' => 'sometimes|required|date',
+                'tipo_usuario' => 'sometimes|in:administrador,usuario',
+                'aceite_comunicacoes_email' => 'sometimes|boolean',
+                'aceite_comunicacoes_sms' => 'sometimes|boolean',
+                'aceite_comunicacoes_whatsapp' => 'sometimes|boolean',
             ];
 
             // Senha é opcional na atualização
@@ -206,7 +206,7 @@ class UsuarioController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Senha atual incorreta'
-                ], 422);
+                ], 400);
             }
 
             $this->usuarioService->alterarSenha($usuario->id, $request->nova_senha);

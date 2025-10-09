@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('permissoes', function (Blueprint $table) {
-            $table->id()->ulid();
+            $table->ulid('id')->primary();
             $table->string('nome');
             $table->string('descricao')->nullable();
             $table->boolean('permissao_admin')->default(false);

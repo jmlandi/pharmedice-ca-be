@@ -8,7 +8,16 @@ use Illuminate\Support\Facades\Route;
 // Rotas públicas (sem autenticação)
 Route::prefix('auth')->group(function () {
     Route::post('login', [AuthController::class, 'login']);
+    Route::post('registrar', [AuthController::class, 'registrar']);
 });
+
+// Rota de verificação de email - precisa de auth e signed
+Route::get('auth/verificar-email/{id}/{hash}', [AuthController::class, 'verificarEmail'])
+    ->name('verification.verify')
+    ->middleware(['jwt.auth', 'signed']);
+
+// Rota pública para consulta de laudos
+Route::get('laudos/consultar/{id}', [LaudoController::class, 'consultarPublico']);
 
 // Rotas que precisam de autenticação JWT
 Route::middleware(['jwt.auth'])->group(function () {
@@ -18,6 +27,7 @@ Route::middleware(['jwt.auth'])->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::post('refresh', [AuthController::class, 'refresh']);
         Route::get('me', [AuthController::class, 'me']);
+        Route::post('reenviar-verificacao-email', [AuthController::class, 'reenviarVerificacaoEmail']);
     });
 
     // Rotas de usuários
