@@ -170,10 +170,16 @@ class LaudoController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            // Se for erro de banco de dados, usa status code 500
+            $statusCode = 500;
+            if ($e->getCode() && $e->getCode() >= 400 && $e->getCode() < 600) {
+                $statusCode = $e->getCode();
+            }
+            
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
-            ], $e->getCode() ?: 500);
+            ], $statusCode);
         }
     }
 
@@ -186,6 +192,31 @@ class LaudoController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Laudo removido com sucesso'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], $e->getCode() ?: 500);
+        }
+    }
+
+    public function consultarPublico(string $id): JsonResponse
+    {
+        try {
+            $laudo = $this->laudoService->buscarPorId($id);
+            
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'id' => $laudo->id,
+                    'titulo' => $laudo->titulo,
+                    'descricao' => $laudo->descricao,
+                    'nome_arquivo' => $laudo->nome_arquivo,
+                    'created_at' => $laudo->created_at,
+                    'updated_at' => $laudo->updated_at
+                ]
             ]);
 
         } catch (\Exception $e) {

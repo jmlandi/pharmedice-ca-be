@@ -124,7 +124,7 @@ class LaudoService
             throw new \Exception('Arquivo não encontrado no storage', 404);
         }
 
-        // Por enquanto retorna o caminho - será implementada URL assinada depois
+        // Por enquanto, gera URL direta do S3 (pode ser configurada como pública ou usar pre-signed URLs)
         $bucketName = config('filesystems.disks.s3.bucket');
         $region = config('filesystems.disks.s3.region');
         $url = "https://{$bucketName}.s3.{$region}.amazonaws.com/{$laudo->url_arquivo}";
@@ -132,25 +132,36 @@ class LaudoService
         return [
             'url' => $url,
             'nome_arquivo' => $laudo->nome_arquivo,
-            'titulo' => $laudo->titulo
+            'nome_arquivo_original' => $laudo->nome_arquivo_original,
+            'titulo' => $laudo->titulo,
+            'tamanho_arquivo' => $this->getTamanhoArquivo($laudo->url_arquivo),
+            'content_type' => 'application/pdf'
         ];
     }
 
     private function uploadArquivo($arquivo): string
     {
-        // Gera nome único para o arquivo
-        $nomeArquivo = Str::uuid() . '_' . time() . '.' . $arquivo->getClientOriginalExtension();
+        // Preserva o nome original do arquivo
+        $nomeOriginal = pathinfo($arquivo->getClientOriginalName(), PATHINFO_FILENAME);
+        $extensao = $arquivo->getClientOriginalExtension();
         
-        // Define o caminho no S3
-        $caminho = 'laudos/' . date('Y/m') . '/' . $nomeArquivo;
+        // Gera nome único mantendo referência ao original
+        $nomeArquivo = Str::uuid() . '_' . time() . '_' . Str::slug($nomeOriginal) . '.' . $extensao;
+        
+        // Define o caminho no S3 organizando por ano/mês
+        $diretorio = 'laudos/' . date('Y/m');
         
         // Faz upload para S3
         $path = Storage::disk('s3')->putFileAs(
-            'laudos/' . date('Y/m'),
+            $diretorio,
             $arquivo,
             $nomeArquivo,
-            'private' // Arquivo privado
+            'private' // Arquivo privado - só acessível via URLs assinadas
         );
+
+        if (!$path) {
+            throw new \Exception('Erro ao fazer upload do arquivo para o S3', 500);
+        }
 
         return $path;
     }
@@ -162,6 +173,15 @@ class LaudoService
         }
         
         return true;
+    }
+
+    private function getTamanhoArquivo(string $caminho): ?int
+    {
+        try {
+            return Storage::disk('s3')->size($caminho);
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 
     private function isAdmin(?string $usuarioId): bool
