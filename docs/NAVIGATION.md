@@ -1,120 +1,79 @@
-# 📚 Mapa da Documentação
+# Documentation Navigation
 
-## 🗂️ Estrutura Organizada
+This document provides a navigation guide for the Pharmedice Customer Area Backend documentation.
 
-A documentação do projeto foi reorganizada para facilitar a navegação e manutenção:
+## 🌍 Language Options
+
+### 🇺🇸 English Documentation
+- [Complete Documentation](./en/README.md)
+- [API Reference](./en/api/README.md)  
+- [Setup Guide](./en/setup/README.md)
+- [System Concepts](./en/concepts/README.md)
+
+### 🇧🇷 Documentação em Português  
+- [Documentação Completa](./pt-br/README.md)
+- [Referência da API](./pt-br/api/README.md)
+- [Guia de Instalação](./pt-br/setup/README.md)  
+- [Conceitos do Sistema](./pt-br/concepts/README.md)
+
+## 📚 Documentation Structure
 
 ```
-📁 docs/
-├── 📄 README.md                          # 👈 Índice principal da documentação
-├── 📄 CONTRIBUTING.md                    # 👈 Guia para contribuir com a documentação
-├── 📁 api/
-│   └── 📄 README.md                      # 👈 Documentação completa da API REST
-├── 📁 setup/
-│   └── 📄 README.md                      # 👈 Guia detalhado de instalação
-├── 📁 concepts/
-│   └── 📄 usuario-id.md                  # 👈 Conceito sobre o campo usuario_id
-└── 📁 changelogs/
-    └── 📄 laudos-consulta-publica.md     # 👈 Mudança para consulta pública de laudos
+docs/
+├── en/                          # 🇺🇸 English Documentation
+│   ├── README.md               # Complete system overview
+│   ├── api/
+│   │   └── README.md           # API reference & endpoints
+│   ├── setup/
+│   │   └── README.md           # Installation & configuration
+│   └── concepts/
+│       ├── README.md           # System architecture
+│       └── email-verification.md
+├── pt-br/                      # 🇧🇷 Portuguese Documentation  
+│   ├── README.md               # Visão geral completa do sistema
+│   ├── api/
+│   │   └── README.md           # Referência da API & endpoints
+│   ├── setup/
+│   │   └── README.md           # Instalação & configuração
+│   └── concepts/
+│       ├── README.md           # Arquitetura do sistema
+│       └── email-verification.md
+├── CONTRIBUTING.md             # Development guidelines
+├── NAVIGATION.md               # This navigation file  
+└── README.md                   # Main documentation index
 ```
 
-## 🎯 Navegação por Perfil
+## 🎯 Getting Started
 
-### 👨‍💻 **Desenvolvedor Frontend**
-1. **Começar por**: [📋 API Documentation](./api/README.md)
-2. **Entender conceitos**: [💡 Usuario ID](./concepts/usuario-id.md)
-3. **Ver mudanças**: [📝 Changelogs](./changelogs/)
+### For English Speakers
+1. **New Developer Setup**: [Setup Guide](./en/setup/README.md)
+2. **API Integration**: [API Reference](./en/api/README.md)  
+3. **System Understanding**: [System Concepts](./en/concepts/README.md)
 
-### ⚙️ **DevOps/Infra**
-1. **Começar por**: [🛠️ Setup Guide](./setup/README.md)
-2. **Configuração completa**: [📋 API Reference](./api/README.md)
-3. **Mudanças recentes**: [📝 Changelogs](./changelogs/)
+### Para Falantes de Português
+1. **Configuração para Novos Desenvolvedores**: [Guia de Instalação](./pt-br/setup/README.md)
+2. **Integração da API**: [Referência da API](./pt-br/api/README.md)
+3. **Entendimento do Sistema**: [Conceitos do Sistema](./pt-br/concepts/README.md)
 
-### 📊 **Product Owner**
-1. **Funcionalidades**: [📝 Laudos Consulta Pública](./changelogs/laudos-consulta-publica.md)
-2. **Regras de negócio**: [💡 Concepts](./concepts/)
-3. **Capacidades da API**: [📋 API Overview](./api/README.md)
+## 🔄 Migration Notice
 
-### 🆕 **Novo no Projeto**
-1. **Visão geral**: [📄 README Principal](../README.md)
-2. **Instalação**: [🛠️ Setup Guide](./setup/README.md)
-3. **Teste da API**: [📋 API Examples](./api/README.md)
-4. **Conceitos**: [💡 Concepts](./concepts/)
+**New Structure**: Documentation has been reorganized into language-specific folders (`en/` and `pt-br/`) for better organization and maintenance.
 
-## 📋 Conteúdo de Cada Seção
+**Recommendation**: Use the new structured documentation in `en/` or `pt-br/` folders rather than the legacy files in the root directories.
 
-### 🔗 [API Documentation](./api/README.md)
-- ✅ Todos os endpoints disponíveis
-- ✅ Exemplos de request/response
-- ✅ Códigos de status HTTP
-- ✅ Autenticação JWT
-- ✅ Filtros e paginação
-- ✅ Estrutura do banco de dados
+## 🤝 Contributing to Documentation
 
-### 🔗 [Setup Guide](./setup/README.md)
-- ✅ Pré-requisitos do sistema
-- ✅ Configuração passo a passo
-- ✅ Variáveis de ambiente
-- ✅ Comandos de inicialização
-- ✅ Testes básicos da API
-- ✅ Troubleshooting comum
+When adding new documentation:
 
-### 🔗 [Concepts](./concepts/)
-- ✅ **Usuario ID**: Explicação sobre quem é o criador do laudo
-- ✅ Relacionamentos entre entidades
-- ✅ Regras de negócio específicas
-- ✅ Fluxos de dados importantes
+1. **Choose Language**: Add to both `en/` and `pt-br/` folders when possible
+2. **Follow Structure**: Place files in appropriate sections (api/, setup/, concepts/)  
+3. **Update Navigation**: Update this NAVIGATION.md file
+4. **Consistent Formatting**: Follow existing markdown conventions
+5. **Include Examples**: Add code examples where relevant
+6. **Update Index**: Update language-specific README.md files if needed
 
-### 🔗 [Changelogs](./changelogs/)
-- ✅ **Consulta Pública de Laudos**: Implementação completa
-- ✅ Breaking changes documentadas
-- ✅ Novas funcionalidades explicadas
-- ✅ Impacto no frontend/integração
-
-## 🚀 Links Rápidos
-
-| Preciso de... | Ir para... |
-|---------------|------------|
-| 🔌 **Integrar com a API** | [📋 API Docs](./api/README.md) |
-| ⚙️ **Instalar o projeto** | [🛠️ Setup Guide](./setup/README.md) |
-| 🧠 **Entender regras de negócio** | [💡 Concepts](./concepts/) |
-| 📰 **Ver o que mudou** | [📝 Changelogs](./changelogs/) |
-| 📝 **Contribuir com docs** | [🤝 Contributing](./CONTRIBUTING.md) |
-| 🏠 **Visão geral do projeto** | [📄 README Principal](../README.md) |
-
-## 💡 Como Usar Esta Documentação
-
-### 🆕 **Primeira vez no projeto?**
-```
-1. 📄 README Principal          (visão geral)
-2. 🛠️ Setup Guide             (instalar)
-3. 📋 API Docs                 (testar endpoints)
-4. 💡 Concepts                 (entender regras)
-```
-
-### 🔧 **Desenvolvendo feature?**
-```
-1. 📝 Changelogs               (mudanças recentes)
-2. 📋 API Docs                 (endpoints existentes)
-3. 💡 Concepts                 (regras de negócio)
-4. 🤝 Contributing             (como documentar)
-```
-
-### 🚀 **Deploy/Produção?**
-```
-1. 🛠️ Setup Guide             (configuração completa)
-2. 📝 Changelogs               (breaking changes)
-3. 📋 API Docs                 (validar endpoints)
-```
-
-## 🎯 Benefícios da Organização
-
-- ✅ **Fácil navegação** por tipo de conteúdo
-- ✅ **Manutenção simples** - cada doc tem propósito específico
-- ✅ **Onboarding rápido** - fluxo claro para novos desenvolvedores
-- ✅ **Versionamento claro** - changelogs organizados por feature
-- ✅ **Separação de responsabilidades** - setup vs API vs conceitos
-
----
-
-*A documentação é a ponte entre o código e quem vai usá-lo. Mantenha-a sempre atualizada! 🌉*
+### Translation Guidelines
+- Keep technical terms consistent across languages
+- Maintain the same file structure in both language folders  
+- Update both versions when making changes
+- Use appropriate language conventions (e.g., date formats, currency)
