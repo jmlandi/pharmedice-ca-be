@@ -12,9 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('laudos', function (Blueprint $table) {
-            $table->ulid('id')->primary();
-            // usuario_id = ID do usuário que CRIOU o laudo (não necessariamente o paciente)
-            $table->foreignUlid('usuario_id')->constrained('usuarios')->onDelete('set null')->nullable();
+            $table->id()->ulid();
+            $table->foreignId('usuario_id')->constrained('usuarios')->onDelete('set null')->nullable();
             $table->string('titulo');
             $table->text('descricao')->nullable();
             $table->string('url_arquivo');
