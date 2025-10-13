@@ -2,15 +2,16 @@
 
 ## Visão Geral
 
-Este documento fornece informações abrangentes para desenvolvedores frontend integrarem com a API backend da Área do Cliente Pharmedice. O backend é construído com Laravel 12 e fornece autenticação baseada em JWT para gerenciamento de laudos médicos.
+Este documento fornece informações abrangentes para desenvolvedores frontend integrarem com a API backend da Área do Cliente Pharmedice. O backend é construído com Laravel 11 e fornece autenticação baseada em JWT para gerenciamento de laudos médicos.
 
 ## Arquitetura
 
-- **Framework Backend**: Laravel 12
-- **Banco de Dados**: PostgreSQL
+- **Framework Backend**: Laravel 11
+- **Banco de Dados**: PostgreSQL  
 - **Armazenamento de Arquivos**: AWS S3
 - **Autenticação**: JWT (JSON Web Tokens)
 - **Formato da API**: API JSON RESTful
+- **Padrão de Resposta**: Português Brasileiro (pt-BR)
 
 ## Configuração Base
 
@@ -25,6 +26,21 @@ http://localhost:8000/api/
   'Content-Type': 'application/json',
   'Accept': 'application/json',
   'Authorization': 'Bearer <jwt_token>' // Para rotas autenticadas
+}
+```
+
+### Teste de CORS
+Para verificar se o CORS está funcionando corretamente:
+```
+GET /api/test-cors
+```
+
+**Resposta:**
+```json
+{
+  "mensagem": "CORS está funcionando!",
+  "timestamp": "2025-10-13T15:30:00.000000Z",
+  "origin": "http://localhost:3000"
 }
 ```
 
@@ -46,19 +62,20 @@ POST /api/auth/login
 **Resposta (Sucesso):**
 ```json
 {
-  "success": true,
-  "message": "Login realizado com sucesso",
-  "data": {
+  "sucesso": true,
+  "mensagem": "Login realizado com sucesso",
+  "dados": {
     "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
     "token_type": "bearer",
     "expires_in": 3600,
-    "user": {
+    "usuario": {
       "id": "01k74vnbvs5nntym592rhyrq44",
       "primeiro_nome": "João",
       "segundo_nome": "Silva",
       "email": "usuario@exemplo.com",
       "tipo_usuario": "administrador", // ou "usuario"
-      "is_admin": true
+      "is_admin": true,
+      "email_verificado": true
     }
   }
 }
@@ -66,7 +83,7 @@ POST /api/auth/login
 
 ### Registro de Usuário (Público - Sem Autenticação Necessária)
 ```
-POST /api/auth/registrar
+POST /api/auth/registrar-usuario
 ```
 
 **Importante**: Este é um endpoint público - não requer autenticação. Qualquer pessoa pode criar uma conta.
@@ -93,6 +110,7 @@ POST /api/auth/registrar
 ```
 
 **Requisitos da Senha:**
+- Mínimo 8 caracteres
 - Pelo menos 1 letra minúscula
 - Pelo menos 1 letra maiúscula  
 - Pelo menos 1 número
@@ -121,10 +139,90 @@ POST /api/auth/registrar
 }
 ```
 
+### Obter Dados do Usuário Atual
+```
+GET /api/auth/me
+```
+
+**Resposta (Sucesso):**
+```json
+{
+  "sucesso": true,
+  "dados": {
+    "id": "01k74vnbvs5nntym592rhyrq44",
+    "nome_completo": "João Silva",
+    "primeiro_nome": "João",
+    "segundo_nome": "Silva",
+    "apelido": "joao",
+    "email": "joao@exemplo.com",
+    "telefone": "(11) 99999-9999",
+    "numero_documento": "12345678901",
+    "data_nascimento": "1990-01-01",
+    "tipo_usuario": "usuario",
+    "is_admin": false,
+    "email_verificado": true,
+    "email_verificado_em": "2025-10-13 15:30:00",
+    "aceite_comunicacoes_email": true,
+    "aceite_comunicacoes_sms": false,
+    "aceite_comunicacoes_whatsapp": true,
+    "ativo": true
+  }
+}
+```
+
 ### Outros Endpoints de Autenticação
 - `POST /api/auth/logout` - Logout do usuário
 - `POST /api/auth/refresh` - Renovar token JWT
-- `GET /api/auth/me` - Obter informações do usuário atual
+- `POST /api/auth/registrar-admin` - Registrar administrador (público)
+- `POST /api/auth/reenviar-verificacao-email` - Reenviar email de verificação (autenticado)
+- `POST /api/auth/reenviar-verificacao-email-publico` - Reenviar email de verificação (público)
+- `GET /api/auth/verificar-email/{id}/{hash}` - Verificar email via link
+
+## Processo de Verificação de Email
+
+### Fluxo de Verificação
+1. Usuário se registra via `POST /api/auth/registrar-usuario` ou `POST /api/auth/registrar-admin`
+2. Sistema envia email de verificação automaticamente
+3. Usuário clica no link no email
+4. Sistema verifica o email e ativa a conta
+
+### Reenviar Email de Verificação (Usuário Autenticado)
+```
+POST /api/auth/reenviar-verificacao-email
+```
+
+### Reenviar Email de Verificação (Público)
+```
+POST /api/auth/reenviar-verificacao-email-publico
+```
+
+**Corpo da Requisição:**
+```json
+{
+  "email": "usuario@exemplo.com"
+}
+```
+
+**Resposta (Sucesso):**
+```json
+{
+  "sucesso": true,
+  "mensagem": "Email de verificação reenviado para usuario@exemplo.com"
+}
+```
+
+### Tratamento de Login com Email Não Verificado
+Quando um usuário tenta fazer login sem ter verificado o email:
+
+**Resposta de Erro:**
+```json
+{
+  "sucesso": false,
+  "mensagem": "Email não verificado. Verifique sua caixa de entrada e clique no link de verificação enviado no momento do cadastro."
+}
+```
+
+**Código de Status:** `403 Forbidden`
 
 ## Gerenciamento de Laudos Médicos
 
@@ -136,26 +234,19 @@ GET /api/laudos
 **Resposta:**
 ```json
 {
-  "success": true,
-  "data": {
+  "sucesso": true,
+  "dados": {
     "current_page": 1,
     "data": [
       {
         "id": "01k7771hv7c5rfsf25wmqkcws6",
-        "usuario_id": "01k74vnbvs5nntym592rhyrq44",
         "titulo": "Laudo de Hemograma Completo",
         "descricao": "Resultado de exame de sangue completo",
+        "nome_arquivo": "arquivo_laudo.pdf",
         "url_arquivo": "laudos/2025/10/arquivo_laudo.pdf",
         "ativo": true,
         "created_at": "2025-10-10T14:05:21.000000Z",
-        "updated_at": "2025-10-10T14:05:21.000000Z",
-        "usuario": {
-          "id": "01k74vnbvs5nntym592rhyrq44",
-          "primeiro_nome": "Admin",
-          "segundo_nome": "Sistema",
-          "email": "admin@pharmedice.com",
-          "tipo_usuario": "administrador"
-        }
+        "updated_at": "2025-10-10T14:05:21.000000Z"
       }
     ],
     "first_page_url": "http://127.0.0.1:8000/api/laudos?page=1",
@@ -167,13 +258,36 @@ GET /api/laudos
 }
 ```
 
+**Nota:** Os laudos não são mais associados a usuários específicos. Qualquer usuário autenticado pode visualizar todos os laudos.
+
 ### Buscar Laudos
 ```
 GET /api/laudos/buscar?busca=<termo_busca>
 ```
 
 **Parâmetros de Query:**
-- `busca` (obrigatório): Termo de busca para encontrar no título ou descrição
+- `busca` (obrigatório): Termo de busca para encontrar no título ou descrição (mínimo 2 caracteres)
+- `data_inicio` (opcional): Data de início para filtro por período (formato: Y-m-d)
+- `data_fim` (opcional): Data de fim para filtro por período (formato: Y-m-d)
+- `per_page` (opcional): Número de itens por página (padrão: 15)
+
+**Resposta:**
+```json
+{
+  "sucesso": true,
+  "dados": {
+    "current_page": 1,
+    "data": [
+      // ... laudos encontrados
+    ],
+    "total": 10
+  },
+  "meta": {
+    "termo_busca": "hemograma",
+    "total_encontrado": 10
+  }
+}
+```
 
 ### Upload de Laudo (Apenas Admin)
 ```
@@ -217,16 +331,50 @@ PUT /api/laudos/{id}
 DELETE /api/laudos/{id}
 ```
 
-## Criação de Usuários - Duas Abordagens Diferentes
+### Consultar Laudo Publicamente (Sem Autenticação)
+```
+GET /api/laudos/consultar/{id}
+```
 
-### 1. Registro Público de Usuário (Sem Autenticação Necessária)
-Use `POST /api/auth/registrar` quando:
+**Resposta:**
+```json
+{
+  "sucesso": true,
+  "dados": {
+    "id": "01k7771hv7c5rfsf25wmqkcws6",
+    "titulo": "Laudo de Hemograma Completo",
+    "descricao": "Resultado de exame de sangue completo",
+    "nome_arquivo": "arquivo_laudo.pdf",
+    "created_at": "2025-10-10T14:05:21.000000Z",
+    "updated_at": "2025-10-10T14:05:21.000000Z"
+  }
+}
+```
+
+### Meus Laudos (DEPRECATED)
+```
+GET /api/laudos/meus-laudos
+```
+
+**Nota:** Este endpoint está deprecated. Ele redirecionará para a listagem geral de laudos, pois os laudos não são mais associados a usuários específicos.
+
+## Criação de Usuários - Três Abordagens Diferentes
+
+### 1. Registro Público de Usuário (Sem Autenticação)
+Use `POST /api/auth/registrar-usuario` quando:
 - Usuários estão se registrando
 - Não requer autenticação
 - Cria apenas usuários regulares (`tipo_usuario: "usuario"`)
-- Inclui processo de verificação de email
+- Inclui processo de verificação de email obrigatório
 
-### 2. Criação de Usuário pelo Admin (Autenticação Necessária)
+### 2. Registro Público de Admin (Sem Autenticação)
+Use `POST /api/auth/registrar-admin` quando:
+- Registrando um administrador
+- Não requer autenticação
+- Cria usuários administradores (`tipo_usuario: "administrador"`)
+- Inclui processo de verificação de email obrigatório
+
+### 3. Criação de Usuário pelo Admin (Autenticação Necessária)
 Use `POST /api/usuarios` quando:
 - Admin está criando usuários administrativamente
 - Requer autenticação de admin
@@ -245,7 +393,7 @@ GET /api/usuarios
 POST /api/usuarios
 ```
 
-**Importante**: Este endpoint requer autenticação de admin. Para registro público de usuários, use `POST /api/auth/registrar`.
+**Importante**: Este endpoint requer autenticação de admin. Para registro público de usuários, use `POST /api/auth/registrar-usuario`.
 
 **Corpo da Requisição:**
 ```json
@@ -296,26 +444,34 @@ PUT /api/usuarios/alterar-senha
 
 ## Usuários de Teste
 
-Para desenvolvimento e testes:
+Para desenvolvimento e testes, execute os seeders:
+
+```bash
+php artisan db:seed
+```
 
 ### Administrador
 - **Email**: `admin@pharmedice.com`
 - **Senha**: `admin123`
+- **Status**: Email verificado
 - **Permissões**: Pode fazer upload, editar, excluir laudos e gerenciar usuários
 
 ### Usuário Regular
 - **Email**: `joao@exemplo.com`
-- **Senha**: `123456`
-- **Permissões**: Pode apenas visualizar e buscar laudos
+- **Senha**: `123456`  
+- **Status**: Email verificado
+- **Permissões**: Pode visualizar, buscar e fazer download de laudos
+
+**Nota:** Estes usuários são criados com emails já verificados para facilitar os testes.
 
 ## Tratamento de Erros
 
 ### Formato de Resposta de Erro
 ```json
 {
-  "success": false,
-  "message": "Descrição do erro",
-  "errors": {
+  "sucesso": false,
+  "mensagem": "Descrição do erro",
+  "erros": {
     "campo": ["Mensagem de erro de validação"]
   }
 }
@@ -325,10 +481,28 @@ Para desenvolvimento e testes:
 - `200` - Sucesso
 - `201` - Criado
 - `400` - Requisição Inválida (erros de validação)
-- `401` - Não Autorizado (token inválido/ausente)
-- `403` - Proibido (permissões insuficientes)
+- `401` - Não Autorizado (token inválido/ausente/expirado)
+- `403` - Proibido (permissões insuficientes, usuário inativo, email não verificado)
 - `404` - Não Encontrado
+- `422` - Entidade Não Processável (dados de validação inválidos)
 - `500` - Erro Interno do Servidor
+
+### Mensagens de Erro dos Middlewares
+
+**Middleware JWT (`401`):**
+- "Token expirado"
+- "Token inválido"
+- "Token não fornecido"
+- "Usuário não encontrado"
+
+**Middleware JWT (`403`):**
+- "Usuário inativo"
+
+**Middleware Admin (`403`):**
+- "Acesso negado. Apenas administradores podem acessar este recurso."
+
+**Middleware Admin (`401`):**
+- "Token inválido ou expirado"
 
 ## Gerenciamento de Token JWT
 
@@ -374,11 +548,11 @@ async function login(email, senha) {
   });
   
   const data = await response.json();
-  if (data.success) {
-    localStorage.setItem('token', data.data.access_token);
-    return data.data.user;
+  if (data.sucesso) {
+    localStorage.setItem('token', data.dados.access_token);
+    return data.dados.usuario;
   }
-  throw new Error(data.message);
+  throw new Error(data.mensagem);
 }
 
 // Obter Laudos
@@ -435,14 +609,30 @@ api.interceptors.request.use(config => {
   return config;
 });
 
-// Tratar expiração do token
+// Tratar expiração do token e outros erros
 api.interceptors.response.use(
   response => response,
   error => {
-    if (error.response?.status === 401) {
-      // Token expirado ou inválido
+    const status = error.response?.status;
+    const data = error.response?.data;
+    
+    if (status === 401) {
+      // Token expirado, inválido ou não fornecido
       localStorage.removeItem('token');
       window.location.href = '/login';
+    } else if (status === 403) {
+      // Usuário inativo, email não verificado ou sem permissões
+      if (data?.mensagem?.includes('não verificado')) {
+        // Redirecionar para página de verificação de email
+        window.location.href = '/verificar-email';
+      } else if (data?.mensagem?.includes('inativo')) {
+        // Usuário foi desativado
+        localStorage.removeItem('token');
+        window.location.href = '/login?erro=conta-inativa';
+      } else {
+        // Sem permissões de admin
+        alert('Acesso negado. Apenas administradores podem acessar este recurso.');
+      }
     }
     return Promise.reject(error);
   }
@@ -529,6 +719,55 @@ async function uploadLaudoComValidacao(file, titulo, descricao) {
   return await uploadLaudo(file, titulo, descricao);
 }
 ```
+
+## Migração para o Novo Padrão de Resposta
+
+Se você possui um frontend existente que usa o padrão anterior em inglês, será necessário atualizar as chaves das respostas:
+
+### Chaves Alteradas
+- `success` → `sucesso`
+- `message` → `mensagem`
+- `data` → `dados`
+- `errors` → `erros`
+- `user` → `usuario` (apenas no contexto de login)
+
+### Exemplo de Migração JavaScript
+```javascript
+// Antes
+if (response.data.success) {
+  const user = response.data.data.user;
+  const token = response.data.data.access_token;
+}
+
+// Depois
+if (response.data.sucesso) {
+  const usuario = response.data.dados.usuario;
+  const token = response.data.dados.access_token;
+}
+
+// Função auxiliar para migração gradual
+function normalizeResponse(response) {
+  const data = response.data;
+  return {
+    success: data.sucesso || data.success,
+    message: data.mensagem || data.message,
+    data: data.dados || data.data,
+    errors: data.erros || data.errors,
+    // Para compatibilidade com login
+    user: data.dados?.usuario || data.data?.user || data.data?.usuario
+  };
+}
+```
+
+## Changelog da API
+
+### Versão Atual (Outubro 2025)
+- ✅ Padronização de respostas para português brasileiro
+- ✅ Remoção da associação laudo-usuário
+- ✅ Implementação de verificação de email obrigatória
+- ✅ Melhorias na segurança e validação
+- ✅ Endpoint de consulta pública de laudos
+- ✅ Middlewares de autenticação e autorização aprimorados
 
 ## Suporte
 

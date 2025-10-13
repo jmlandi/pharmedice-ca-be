@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Route;
 // Endpoint para testar CORS
 Route::get('test-cors', function () {
     return response()->json([
-        'message' => 'CORS está funcionando!',
+        'mensagem' => 'CORS está funcionando!',
         'timestamp' => now(),
         'origin' => request()->header('Origin')
     ]);

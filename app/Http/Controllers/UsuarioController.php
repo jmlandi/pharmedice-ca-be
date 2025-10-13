@@ -35,8 +35,8 @@ class UsuarioController extends Controller
             ]);
 
             return response()->json([
-                'success' => true,
-                'data' => $usuarios
+                'sucesso' => true,
+                'dados' => $usuarios
             ]);
 
         } catch (\Exception $e) {
@@ -46,8 +46,8 @@ class UsuarioController extends Controller
             ]);
 
             return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
+                'sucesso' => false,
+                'mensagem' => $e->getMessage()
             ], $e->getCode() ?: 500);
         }
     }
@@ -68,8 +68,8 @@ class UsuarioController extends Controller
             ]);
 
             return response()->json([
-                'success' => true,
-                'data' => $usuario
+                'sucesso' => true,
+                'dados' => $usuario
             ]);
 
         } catch (\Exception $e) {
@@ -80,8 +80,8 @@ class UsuarioController extends Controller
             ]);
 
             return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
+                'sucesso' => false,
+                'mensagem' => $e->getMessage()
             ], $e->getCode() ?: 500);
         }
     }
@@ -132,9 +132,9 @@ class UsuarioController extends Controller
                 ]);
 
                 return response()->json([
-                    'success' => false,
-                    'message' => 'Dados inválidos',
-                    'errors' => $validator->errors()
+                    'sucesso' => false,
+                    'mensagem' => 'Dados inválidos',
+                    'erros' => $validator->errors()
                 ], 422);
             }
 
@@ -149,9 +149,9 @@ class UsuarioController extends Controller
             ]);
 
             return response()->json([
-                'success' => true,
-                'message' => 'Usuário criado com sucesso',
-                'data' => $usuario
+                'sucesso' => true,
+                'mensagem' => 'Usuário criado com sucesso',
+                'dados' => $usuario
             ], 201);
 
         } catch (\Exception $e) {
@@ -163,8 +163,8 @@ class UsuarioController extends Controller
             ]);
 
             return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
+                'sucesso' => false,
+                'mensagem' => $e->getMessage()
             ], $e->getCode() ?: 500);
         }
     }
@@ -206,9 +206,9 @@ class UsuarioController extends Controller
                 ]);
 
                 return response()->json([
-                    'success' => false,
-                    'message' => 'Dados inválidos',
-                    'errors' => $validator->errors()
+                    'sucesso' => false,
+                    'mensagem' => 'Dados inválidos',
+                    'erros' => $validator->errors()
                 ], 422);
             }
 
@@ -222,9 +222,9 @@ class UsuarioController extends Controller
             ]);
 
             return response()->json([
-                'success' => true,
-                'message' => 'Usuário atualizado com sucesso',
-                'data' => $usuario
+                'sucesso' => true,
+                'mensagem' => 'Usuário atualizado com sucesso',
+                'dados' => $usuario
             ]);
 
         } catch (\Exception $e) {
@@ -235,8 +235,8 @@ class UsuarioController extends Controller
             ]);
 
             return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
+                'sucesso' => false,
+                'mensagem' => $e->getMessage()
             ], $e->getCode() ?: 500);
         }
     }
@@ -255,8 +255,8 @@ class UsuarioController extends Controller
             ]);
 
             return response()->json([
-                'success' => true,
-                'message' => 'Usuário removido com sucesso'
+                'sucesso' => true,
+                'mensagem' => 'Usuário removido com sucesso'
             ]);
 
         } catch (\Exception $e) {
@@ -267,8 +267,8 @@ class UsuarioController extends Controller
             ]);
 
             return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
+                'sucesso' => false,
+                'mensagem' => $e->getMessage()
             ], $e->getCode() ?: 500);
         }
     }
@@ -294,9 +294,9 @@ class UsuarioController extends Controller
                 ]);
 
                 return response()->json([
-                    'success' => false,
-                    'message' => 'Dados inválidos',
-                    'errors' => $validator->errors()
+                    'sucesso' => false,
+                    'mensagem' => 'Dados inválidos',
+                    'erros' => $validator->errors()
                 ], 422);
             }
 
@@ -309,8 +309,8 @@ class UsuarioController extends Controller
                 ]);
 
                 return response()->json([
-                    'success' => false,
-                    'message' => 'Senha atual incorreta'
+                    'sucesso' => false,
+                    'mensagem' => 'Senha atual incorreta'
                 ], 400);
             }
 
@@ -321,8 +321,8 @@ class UsuarioController extends Controller
             ]);
 
             return response()->json([
-                'success' => true,
-                'message' => 'Senha alterada com sucesso'
+                'sucesso' => true,
+                'mensagem' => 'Senha alterada com sucesso'
             ]);
 
         } catch (\Exception $e) {
@@ -332,8 +332,8 @@ class UsuarioController extends Controller
             ]);
 
             return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
+                'sucesso' => false,
+                'mensagem' => $e->getMessage()
             ], $e->getCode() ?: 500);
         }
     }

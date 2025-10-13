@@ -24,35 +24,35 @@ class JwtMiddleware
             
             if (!$user) {
                 return response()->json([
-                    'success' => false,
-                    'message' => 'Usuário não encontrado'
+                    'sucesso' => false,
+                    'mensagem' => 'Usuário não encontrado'
                 ], 404);
             }
 
             // Verifica se usuário está ativo
             if (!$user->ativo) {
                 return response()->json([
-                    'success' => false,
-                    'message' => 'Usuário inativo'
+                    'sucesso' => false,
+                    'mensagem' => 'Usuário inativo'
                 ], 403);
             }
 
         } catch (TokenExpiredException $e) {
             return response()->json([
-                'success' => false,
-                'message' => 'Token expirado'
+                'sucesso' => false,
+                'mensagem' => 'Token expirado'
             ], 401);
 
         } catch (TokenInvalidException $e) {
             return response()->json([
-                'success' => false,
-                'message' => 'Token inválido'
+                'sucesso' => false,
+                'mensagem' => 'Token inválido'
             ], 401);
 
         } catch (JWTException $e) {
             return response()->json([
-                'success' => false,
-                'message' => 'Token não fornecido'
+                'sucesso' => false,
+                'mensagem' => 'Token não fornecido'
             ], 401);
         }
 

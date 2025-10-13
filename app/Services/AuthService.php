@@ -89,6 +89,8 @@ class AuthService
             'data_nascimento' => $usuario->data_nascimento->format('Y-m-d'),
             'tipo_usuario' => $usuario->tipo_usuario,
             'is_admin' => $usuario->is_admin,
+            'email_verificado' => $usuario->hasVerifiedEmail(),
+            'email_verificado_em' => $usuario->email_verified_at?->format('Y-m-d H:i:s'),
             'aceite_comunicacoes_email' => $usuario->aceite_comunicacoes_email,
             'aceite_comunicacoes_sms' => $usuario->aceite_comunicacoes_sms,
             'aceite_comunicacoes_whatsapp' => $usuario->aceite_comunicacoes_whatsapp,
@@ -189,7 +191,7 @@ class AuthService
         $this->enviarEmailVerificacao($usuario);
 
         return [
-            'success' => true,
+            'sucesso' => true,
             'mensagem' => 'Email de verificação reenviado para ' . $usuario->email
         ];
     }
@@ -218,7 +220,7 @@ class AuthService
         $this->enviarEmailVerificacao($usuario);
 
         return [
-            'success' => true,
+            'sucesso' => true,
             'mensagem' => 'Email de verificação reenviado para ' . $usuario->email
         ];
     }
@@ -249,7 +251,7 @@ class AuthService
         $usuario->markEmailAsVerified();
 
         return [
-            'success' => true,
+            'sucesso' => true,
             'mensagem' => 'Email verificado com sucesso!',
             'usuario' => [
                 'email' => $usuario->email,

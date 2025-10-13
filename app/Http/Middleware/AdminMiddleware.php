@@ -21,15 +21,15 @@ class AdminMiddleware
             
             if (!$user || !$user->isAdmin()) {
                 return response()->json([
-                    'success' => false,
-                    'message' => 'Acesso negado. Apenas administradores podem acessar este recurso.'
+                    'sucesso' => false,
+                    'mensagem' => 'Acesso negado. Apenas administradores podem acessar este recurso.'
                 ], 403);
             }
 
         } catch (\Exception $e) {
             return response()->json([
-                'success' => false,
-                'message' => 'Token inválido ou expirado'
+                'sucesso' => false,
+                'mensagem' => 'Token inválido ou expirado'
             ], 401);
         }
 

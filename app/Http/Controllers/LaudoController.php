@@ -38,8 +38,8 @@ class LaudoController extends Controller
             ]);
 
             return response()->json([
-                'success' => true,
-                'data' => $laudos
+                'sucesso' => true,
+                'dados' => $laudos
             ]);
 
         } catch (\Exception $e) {
@@ -49,8 +49,8 @@ class LaudoController extends Controller
             ]);
 
             return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
+                'sucesso' => false,
+                'mensagem' => $e->getMessage()
             ], 500);
         }
     }
@@ -73,8 +73,8 @@ class LaudoController extends Controller
             ]);
 
             return response()->json([
-                'success' => true,
-                'data' => $laudo
+                'sucesso' => true,
+                'dados' => $laudo
             ]);
 
         } catch (\Exception $e) {
@@ -85,8 +85,8 @@ class LaudoController extends Controller
             ]);
 
             return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
+                'sucesso' => false,
+                'mensagem' => $e->getMessage()
             ], 500);
         }
     }
@@ -119,9 +119,9 @@ class LaudoController extends Controller
                 ]);
 
                 return response()->json([
-                    'success' => false,
-                    'message' => 'Dados inválidos',
-                    'errors' => $validator->errors()
+                    'sucesso' => false,
+                    'mensagem' => 'Dados inválidos',
+                    'erros' => $validator->errors()
                 ], 422);
             }
 
@@ -137,9 +137,9 @@ class LaudoController extends Controller
             ]);
 
             return response()->json([
-                'success' => true,
-                'message' => 'Laudo criado com sucesso',
-                'data' => $laudo
+                'sucesso' => true,
+                'mensagem' => 'Laudo criado com sucesso',
+                'dados' => $laudo
             ], 201);
 
         } catch (\Exception $e) {
@@ -150,8 +150,8 @@ class LaudoController extends Controller
             ]);
 
             return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
+                'sucesso' => false,
+                'mensagem' => $e->getMessage()
             ], 500);
         }
     }
@@ -190,9 +190,9 @@ class LaudoController extends Controller
                 ]);
 
                 return response()->json([
-                    'success' => false,
-                    'message' => 'Dados inválidos',
-                    'errors' => $validator->errors()
+                    'sucesso' => false,
+                    'mensagem' => 'Dados inválidos',
+                    'erros' => $validator->errors()
                 ], 422);
             }
 
@@ -211,9 +211,9 @@ class LaudoController extends Controller
             ]);
 
             return response()->json([
-                'success' => true,
-                'message' => 'Laudo atualizado com sucesso',
-                'data' => $laudo
+                'sucesso' => true,
+                'mensagem' => 'Laudo atualizado com sucesso',
+                'dados' => $laudo
             ]);
 
         } catch (\Exception $e) {
@@ -230,8 +230,8 @@ class LaudoController extends Controller
             }
             
             return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
+                'sucesso' => false,
+                'mensagem' => $e->getMessage()
             ], $statusCode);
         }
     }
@@ -252,8 +252,8 @@ class LaudoController extends Controller
             ]);
 
             return response()->json([
-                'success' => true,
-                'message' => 'Laudo removido com sucesso'
+                'sucesso' => true,
+                'mensagem' => 'Laudo removido com sucesso'
             ]);
 
         } catch (\Exception $e) {
@@ -264,8 +264,8 @@ class LaudoController extends Controller
             ]);
 
             return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
+                'sucesso' => false,
+                'mensagem' => $e->getMessage()
             ], 500);
         }
     }
@@ -285,8 +285,8 @@ class LaudoController extends Controller
             ]);
 
             return response()->json([
-                'success' => true,
-                'data' => [
+                'sucesso' => true,
+                'dados' => [
                     'id' => $laudo->id,
                     'titulo' => $laudo->titulo,
                     'descricao' => $laudo->descricao,
@@ -304,8 +304,8 @@ class LaudoController extends Controller
             ]);
 
             return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
+                'sucesso' => false,
+                'mensagem' => $e->getMessage()
             ], 500);
         }
     }
@@ -328,8 +328,8 @@ class LaudoController extends Controller
             ]);
 
             return response()->json([
-                'success' => true,
-                'data' => $downloadInfo
+                'sucesso' => true,
+                'dados' => $downloadInfo
             ]);
 
         } catch (\Exception $e) {
@@ -340,8 +340,8 @@ class LaudoController extends Controller
             ]);
 
             return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
+                'sucesso' => false,
+                'mensagem' => $e->getMessage()
             ], 500);
         }
     }
@@ -384,9 +384,9 @@ class LaudoController extends Controller
                 ]);
 
                 return response()->json([
-                    'success' => false,
-                    'message' => 'Dados inválidos',
-                    'errors' => $validator->errors()
+                    'sucesso' => false,
+                    'mensagem' => 'Dados inválidos',
+                    'erros' => $validator->errors()
                 ], 422);
             }
 
@@ -408,8 +408,8 @@ class LaudoController extends Controller
             ]);
 
             return response()->json([
-                'success' => true,
-                'data' => $laudos,
+                'sucesso' => true,
+                'dados' => $laudos,
                 'meta' => [
                     'termo_busca' => $request->get('busca'),
                     'total_encontrado' => $laudos->total()
@@ -424,8 +424,8 @@ class LaudoController extends Controller
             ]);
 
             return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
+                'sucesso' => false,
+                'mensagem' => $e->getMessage()
             ], 500);
         }
     }

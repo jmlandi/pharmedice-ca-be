@@ -103,8 +103,8 @@ class AuthenticationTest extends TestCase
         // Assert: Login deve ser bloqueado
         $response->assertStatus(403)
                 ->assertJson([
-                    'success' => false,
-                    'message' => 'Email não verificado. Verifique sua caixa de entrada e clique no link de verificação enviado no momento do cadastro.'
+                    'sucesso' => false,
+                    'mensagem' => 'Email não verificado. Verifique sua caixa de entrada e clique no link de verificação enviado no momento do cadastro.'
                 ]);
     }
 
@@ -139,8 +139,8 @@ class AuthenticationTest extends TestCase
         // Assert: Login deve falhar
         $response->assertStatus(401)
                 ->assertJson([
-                    'success' => false,
-                    'message' => 'Credenciais inválidas'
+                    'sucesso' => false,
+                    'mensagem' => 'Credenciais inválidas'
                 ]);
     }
 
@@ -174,8 +174,8 @@ class AuthenticationTest extends TestCase
         // Assert: Login deve ser negado
         $response->assertStatus(401)
                 ->assertJson([
-                    'success' => false,
-                    'message' => 'Usuário inativo'
+                    'sucesso' => false,
+                    'mensagem' => 'Usuário inativo'
                 ]);
     }
 
@@ -210,13 +210,36 @@ class AuthenticationTest extends TestCase
         // Assert: Deve retornar dados do usuário
         $response->assertStatus(200)
                 ->assertJson([
-                    'success' => true,
-                    'data' => [
+                    'sucesso' => true,
+                    'dados' => [
                         'id' => $usuario->id,
                         'primeiro_nome' => 'Maria',
                         'segundo_nome' => 'Santos',
                         'email' => 'maria@test.com',
-                        'tipo_usuario' => 'administrador'
+                        'tipo_usuario' => 'administrador',
+                        'email_verificado' => true
+                    ]
+                ])
+                ->assertJsonStructure([
+                    'sucesso',
+                    'dados' => [
+                        'id',
+                        'nome_completo',
+                        'primeiro_nome',
+                        'segundo_nome',
+                        'apelido',
+                        'email',
+                        'telefone',
+                        'numero_documento',
+                        'data_nascimento',
+                        'tipo_usuario',
+                        'is_admin',
+                        'email_verificado',
+                        'email_verificado_em',
+                        'aceite_comunicacoes_email',
+                        'aceite_comunicacoes_sms',
+                        'aceite_comunicacoes_whatsapp',
+                        'ativo'
                     ]
                 ]);
     }
@@ -261,8 +284,8 @@ class AuthenticationTest extends TestCase
         // Assert: Logout deve ser bem-sucedido
         $response->assertStatus(200)
                 ->assertJson([
-                    'success' => true,
-                    'message' => 'Logout realizado com sucesso'
+                    'sucesso' => true,
+                    'mensagem' => 'Logout realizado com sucesso'
                 ]);
 
         // Verificar que o token não funciona mais
@@ -304,15 +327,16 @@ class AuthenticationTest extends TestCase
         // Assert: Deve retornar novo token
         $response->assertStatus(200)
                 ->assertJsonStructure([
-                    'success',
-                    'data' => [
+                    'sucesso',
+                    'mensagem',
+                    'dados' => [
                         'access_token',
                         'token_type',
                         'expires_in'
                     ]
                 ]);
 
-        $newToken = $response->json('data.access_token');
+        $newToken = $response->json('dados.access_token');
         $this->assertNotEquals($originalToken, $newToken);
 
         // Verificar que o novo token funciona
@@ -353,8 +377,8 @@ class AuthenticationTest extends TestCase
         // Assert: Verificar resposta de erro
         $response->assertStatus(403)
             ->assertJson([
-                'success' => false,
-                'message' => 'Email não verificado. Verifique sua caixa de entrada e clique no link de verificação enviado no momento do cadastro.'
+                'sucesso' => false,
+                'mensagem' => 'Email não verificado. Verifique sua caixa de entrada e clique no link de verificação enviado no momento do cadastro.'
             ]);
     }
 

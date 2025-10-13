@@ -42,9 +42,9 @@ class AuthController extends Controller
                 ]);
                 
                 return response()->json([
-                    'success' => false,
-                    'message' => 'Dados inválidos',
-                    'errors' => $validator->errors()
+                    'sucesso' => false,
+                    'mensagem' => 'Dados inválidos',
+                    'erros' => $validator->errors()
                 ], 422);
             }
 
@@ -57,9 +57,9 @@ class AuthController extends Controller
             ]);
 
             return response()->json([
-                'success' => true,
-                'message' => 'Login realizado com sucesso',
-                'data' => $result
+                'sucesso' => true,
+                'mensagem' => 'Login realizado com sucesso',
+                'dados' => $result
             ]);
 
         } catch (\Exception $e) {
@@ -70,8 +70,8 @@ class AuthController extends Controller
             ]);
 
             return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
+                'sucesso' => false,
+                'mensagem' => $e->getMessage()
             ], $e->getCode() ?: 500);
         }
     }
@@ -516,8 +516,8 @@ class AuthController extends Controller
             Log::info('AuthController::logout - Logout realizado com sucesso');
 
             return response()->json([
-                'success' => true,
-                'message' => 'Logout realizado com sucesso'
+                'sucesso' => true,
+                'mensagem' => 'Logout realizado com sucesso'
             ]);
 
         } catch (\Exception $e) {
@@ -527,8 +527,8 @@ class AuthController extends Controller
             ]);
 
             return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
+                'sucesso' => false,
+                'mensagem' => $e->getMessage()
             ], $e->getCode() ?: 500);
         }
     }
@@ -543,9 +543,9 @@ class AuthController extends Controller
             Log::info('AuthController::refresh - Token renovado com sucesso');
 
             return response()->json([
-                'success' => true,
-                'message' => 'Token renovado com sucesso',
-                'data' => $result
+                'sucesso' => true,
+                'mensagem' => 'Token renovado com sucesso',
+                'dados' => $result
             ]);
 
         } catch (\Exception $e) {
@@ -555,8 +555,8 @@ class AuthController extends Controller
             ]);
 
             return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
+                'sucesso' => false,
+                'mensagem' => $e->getMessage()
             ], $e->getCode() ?: 500);
         }
     }
@@ -573,8 +573,8 @@ class AuthController extends Controller
             ]);
 
             return response()->json([
-                'success' => true,
-                'data' => $result
+                'sucesso' => true,
+                'dados' => $result
             ]);
 
         } catch (\Exception $e) {
@@ -584,8 +584,8 @@ class AuthController extends Controller
             ]);
 
             return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
+                'sucesso' => false,
+                'mensagem' => $e->getMessage()
             ], $e->getCode() ?: 500);
         }
     }
