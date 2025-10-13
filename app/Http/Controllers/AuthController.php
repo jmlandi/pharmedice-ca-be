@@ -8,6 +8,7 @@ use App\Services\AuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
@@ -439,70 +440,99 @@ class AuthController extends Controller
     /**
      * Verifica o email do usuário através do link enviado por email
      * 
-     * @param Request $request Contém parâmetros de verificação da URL
-     * @param string $id ID do usuário (parâmetro da rota)
-     * @param string $hash Hash de verificação (parâmetro da rota)
-     * @return \Illuminate\View\View
+     * @param Request $request Contém parâmetros de verificação (id, hash, expires, signature)
+     * @return JsonResponse
      */
-    public function verificarEmail(Request $request, $id, $hash)
+    public function verificarEmail(Request $request): JsonResponse
     {
-        Log::info('AuthController::verificarEmail - Tentativa de verificação de email', [
-            'user_id' => $id,
-            'hash' => $hash,
-            'ip' => $request->ip()
-        ]);
-
         try {
-            // Verificar se a URL foi assinada corretamente
-            if (!$request->hasValidSignature()) {
-                Log::warning('AuthController::verificarEmail - Link de verificação inválido ou expirado', [
-                    'user_id' => $id,
-                    'hash' => $hash
+            // Validar parâmetros necessários
+            $request->validate([
+                'id' => 'required|string',
+                'hash' => 'required|string',
+                'expires' => 'required|integer',
+                'signature' => 'required|string',
+            ]);
+
+            Log::info('AuthController::verificarEmail - Tentativa de verificação de email', [
+                'user_id' => $request->id,
+                'ip' => $request->ip()
+            ]);
+
+            // Verificar se expirou
+            if (now()->timestamp > $request->expires) {
+                Log::warning('AuthController::verificarEmail - Link de verificação expirado', [
+                    'user_id' => $request->id,
+                    'expires' => $request->expires
                 ]);
 
-                return view('auth.email-verification', [
-                    'success' => false,
-                    'title' => 'Link Inválido',
-                    'message' => 'Este link de verificação é inválido ou expirou.',
-                    'description' => 'Por favor, solicite um novo email de verificação.',
-                    'show_resend' => true
-                ]);
+                return response()->json([
+                    'sucesso' => false,
+                    'mensagem' => 'Este link de verificação expirou.',
+                    'codigo' => 'LINK_INVALIDO'
+                ], 422);
             }
 
-            $resultado = $this->authService->verificarEmail($id, $hash);
+            // Validar a assinatura
+            // Laravel gera os parâmetros em ordem alfabética: expires, hash, id
+            // Precisamos reconstruir a URL exatamente como ela foi gerada
+            $baseUrl = URL::route('verification.verify', [], true);
+            
+            // Construir a query string na ordem alfabética correta
+            $queryString = http_build_query([
+                'expires' => $request->expires,
+                'hash' => $request->hash,
+                'id' => $request->id,
+            ]);
+            
+            $urlToValidate = $baseUrl . '?' . $queryString;
+            
+            // Calcular a assinatura esperada
+            $expectedSignature = hash_hmac('sha256', $urlToValidate, config('app.key'));
+            
+            // Comparar as assinaturas
+            if (!hash_equals($expectedSignature, $request->signature)) {
+                Log::warning('AuthController::verificarEmail - Assinatura inválida', [
+                    'user_id' => $request->id,
+                    'expected' => $expectedSignature,
+                    'received' => $request->signature,
+                    'url' => $urlToValidate
+                ]);
+
+                return response()->json([
+                    'sucesso' => false,
+                    'mensagem' => 'Este link de verificação é inválido.',
+                    'codigo' => 'LINK_INVALIDO'
+                ], 422);
+            }
+
+            $resultado = $this->authService->verificarEmail($request->id, $request->hash);
 
             Log::info('AuthController::verificarEmail - Email verificado com sucesso', [
-                'user_id' => $id
+                'user_id' => $request->id
             ]);
 
-            return view('auth.email-verification', [
-                'success' => true,
-                'title' => 'Email Verificado!',
-                'message' => 'Seu email foi verificado com sucesso.',
-                'description' => 'Agora você pode fazer login na sua conta.',
-                'user_email' => $resultado['usuario']['email'],
-                'verified_at' => $resultado['usuario']['verificado_em']
-            ]);
+            return response()->json([
+                'sucesso' => true,
+                'mensagem' => 'Email verificado com sucesso!',
+                'dados' => $resultado
+            ], 200);
 
         } catch (\Exception $e) {
             Log::error('AuthController::verificarEmail - Erro durante verificação de email', [
-                'user_id' => $id,
-                'hash' => $hash,
+                'user_id' => $request->id ?? null,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
 
             $isAlreadyVerified = strpos($e->getMessage(), 'já foi verificado') !== false;
+            $statusCode = $isAlreadyVerified ? 422 : ($e->getCode() ?: 500);
             
-            return view('auth.email-verification', [
-                'success' => $isAlreadyVerified,
-                'title' => $isAlreadyVerified ? 'Email Já Verificado' : 'Erro na Verificação',
-                'message' => $e->getMessage(),
-                'description' => $isAlreadyVerified 
-                    ? 'Seu email já foi verificado anteriormente. Você pode fazer login normalmente.'
-                    : 'Ocorreu um erro ao verificar seu email. Tente novamente.',
-                'show_resend' => !$isAlreadyVerified
-            ]);
+            return response()->json([
+                'sucesso' => false,
+                'mensagem' => $e->getMessage(),
+                'codigo' => $isAlreadyVerified ? 'JA_VERIFICADO' : 'ERRO_VERIFICACAO'
+            ], $statusCode);
         }
     }
 
@@ -579,6 +609,140 @@ class AuthController extends Controller
 
         } catch (\Exception $e) {
             Log::error('AuthController::me - Erro ao recuperar dados do usuário', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'sucesso' => false,
+                'mensagem' => $e->getMessage()
+            ], $e->getCode() ?: 500);
+        }
+    }
+
+    /**
+     * Envia email de recuperação de senha
+     * 
+     * @param Request $request Contém o email do usuário
+     * @return JsonResponse
+     */
+    public function solicitarRecuperacaoSenha(Request $request): JsonResponse
+    {
+        Log::info('AuthController::solicitarRecuperacaoSenha - Solicitação de recuperação de senha', [
+            'email' => $request->input('email'),
+            'ip' => $request->ip()
+        ]);
+
+        try {
+            $validator = Validator::make($request->all(), [
+                'email' => 'required|email',
+            ], [
+                'email.required' => 'Email é obrigatório',
+                'email.email' => 'Email deve ter um formato válido',
+            ]);
+
+            if ($validator->fails()) {
+                Log::warning('AuthController::solicitarRecuperacaoSenha - Dados de validação inválidos', [
+                    'email' => $request->input('email'),
+                    'errors' => $validator->errors()
+                ]);
+
+                return response()->json([
+                    'sucesso' => false,
+                    'mensagem' => 'Dados inválidos',
+                    'erros' => $validator->errors()
+                ], 422);
+            }
+
+            $resultado = $this->authService->enviarEmailRecuperacaoSenha($request->input('email'));
+
+            Log::info('AuthController::solicitarRecuperacaoSenha - Email de recuperação processado', [
+                'email' => $request->input('email')
+            ]);
+
+            return response()->json([
+                'sucesso' => true,
+                'mensagem' => $resultado['mensagem']
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('AuthController::solicitarRecuperacaoSenha - Erro ao processar recuperação de senha', [
+                'email' => $request->input('email'),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'sucesso' => false,
+                'mensagem' => $e->getMessage()
+            ], $e->getCode() ?: 500);
+        }
+    }
+
+    /**
+     * Redefine a senha do usuário
+     * 
+     * @param Request $request Contém o token, email e nova senha
+     * @return JsonResponse
+     */
+    public function redefinirSenha(Request $request): JsonResponse
+    {
+        Log::info('AuthController::redefinirSenha - Tentativa de redefinição de senha', [
+            'email' => $request->input('email'),
+            'ip' => $request->ip()
+        ]);
+
+        try {
+            $validator = Validator::make($request->all(), [
+                'email' => 'required|email',
+                'token' => 'required|string',
+                'senha' => 'required|string|min:8|max:50|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/',
+                'confirmacao_senha' => 'required|string|same:senha',
+            ], [
+                'email.required' => 'Email é obrigatório',
+                'email.email' => 'Email deve ter um formato válido',
+                'token.required' => 'Token é obrigatório',
+                'senha.required' => 'A senha é obrigatória',
+                'senha.min' => 'A senha deve ter pelo menos 8 caracteres',
+                'senha.max' => 'A senha deve ter no máximo 50 caracteres',
+                'senha.regex' => 'A senha deve conter pelo menos: 1 letra minúscula, 1 maiúscula, 1 número e 1 caractere especial (@$!%*?&)',
+                'confirmacao_senha.required' => 'A confirmação da senha é obrigatória',
+                'confirmacao_senha.same' => 'A confirmação da senha deve ser igual à senha',
+            ]);
+
+            if ($validator->fails()) {
+                Log::warning('AuthController::redefinirSenha - Dados de validação inválidos', [
+                    'email' => $request->input('email'),
+                    'errors' => $validator->errors()
+                ]);
+
+                return response()->json([
+                    'sucesso' => false,
+                    'mensagem' => 'Dados inválidos',
+                    'erros' => $validator->errors()
+                ], 422);
+            }
+
+            $resultado = $this->authService->redefinirSenha(
+                $request->input('email'),
+                $request->input('token'),
+                $request->input('senha'),
+                $request->input('confirmacao_senha')
+            );
+
+            Log::info('AuthController::redefinirSenha - Senha redefinida com sucesso', [
+                'email' => $request->input('email')
+            ]);
+
+            return response()->json([
+                'sucesso' => true,
+                'mensagem' => $resultado['mensagem'],
+                'dados' => $resultado['usuario']
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('AuthController::redefinirSenha - Erro ao redefinir senha', [
+                'email' => $request->input('email'),
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);

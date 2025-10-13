@@ -20,12 +20,15 @@ Route::prefix('auth')->group(function () {
     Route::post('registrar-usuario', [AuthController::class, 'registrarUsuario']);
     Route::post('registrar-admin', [AuthController::class, 'registrarAdmin']);
     Route::post('reenviar-verificacao-email-publico', [AuthController::class, 'reenviarVerificacaoEmailPublico']);
+    
+    // Rotas de recuperação de senha
+    Route::post('solicitar-recuperacao-senha', [AuthController::class, 'solicitarRecuperacaoSenha']);
+    Route::post('redefinir-senha', [AuthController::class, 'redefinirSenha']);
+    
+    // Rota de verificação de email - pública com signed URL
+    Route::post('verificar-email', [AuthController::class, 'verificarEmail'])
+        ->name('verification.verify');
 });
-
-// Rota de verificação de email - pública com signed URL
-Route::get('auth/verificar-email/{id}/{hash}', [AuthController::class, 'verificarEmail'])
-    ->name('verification.verify')
-    ->middleware(['signed']);
 
 // Rota pública para consulta de laudos
 Route::get('laudos/consultar/{id}', [LaudoController::class, 'consultarPublico']);

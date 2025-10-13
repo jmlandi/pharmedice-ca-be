@@ -4,11 +4,16 @@ namespace App\Services;
 
 use App\DTOs\LoginDTO;
 use App\DTOs\SignupDTO;
+use App\Mail\EmailVerificationMail;
+use App\Mail\PasswordResetMail;
 use App\Models\Usuario;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthService
@@ -160,8 +165,50 @@ class AuthService
     private function enviarEmailVerificacao(Usuario $usuario): void
     {
         try {
-            // Envia o email de verificação usando o sistema nativo do Laravel
-            $usuario->sendEmailVerificationNotification();
+            // URL do frontend baseada no tipo de usuário
+            $frontendUrl = config('app.frontend_url', 'http://localhost:3000');
+            
+            // Define o caminho baseado no tipo de usuário
+            if ($usuario->tipo_usuario === 'administrador') {
+                $path = '/admin/verificar-email';
+            } else {
+                $path = '/cliente/verificar-email';
+            }
+            
+            // Gera URL assinada temporária
+            $signedUrl = URL::temporarySignedRoute(
+                'verification.verify',
+                now()->addMinutes(60),
+                [
+                    'id' => $usuario->id,
+                    'hash' => sha1($usuario->getEmailForVerification()),
+                ]
+            );
+            
+            // Extrai os parâmetros da URL assinada
+            $parsedUrl = parse_url($signedUrl);
+            parse_str($parsedUrl['query'], $params);
+            
+            // Cria a URL do frontend com os parâmetros necessários
+            $verificationUrl = $frontendUrl . $path . 
+                '?id=' . $usuario->id . 
+                '&hash=' . sha1($usuario->getEmailForVerification()) .
+                '&expires=' . $params['expires'] .
+                '&signature=' . $params['signature'];
+
+            // Envia o email de verificação usando o Mailable customizado
+            Mail::to($usuario->email)->send(
+                new EmailVerificationMail(
+                    $verificationUrl,
+                    $usuario->primeiro_nome,
+                    60
+                )
+            );
+            
+            Log::info('Email de verificação enviado', [
+                'usuario_id' => $usuario->id,
+                'email' => $usuario->email
+            ]);
         } catch (\Exception $e) {
             // Log do erro mas não interrompe o processo de registro
             Log::warning('Falha ao enviar email de verificação', [
@@ -257,6 +304,167 @@ class AuthService
                 'email' => $usuario->email,
                 'email_verificado' => true,
                 'verificado_em' => $usuario->email_verified_at
+            ]
+        ];
+    }
+
+    /**
+     * Envia email de recuperação de senha para o usuário
+     * 
+     * @param string $email Email do usuário
+     * @return array
+     * @throws \Exception
+     */
+    public function enviarEmailRecuperacaoSenha(string $email): array
+    {
+        $usuario = Usuario::where('email', $email)->first();
+
+        if (!$usuario) {
+            // Por segurança, não revelamos se o email existe ou não
+            return [
+                'sucesso' => true,
+                'mensagem' => 'Se o cadastro existir em nosso sistema, você receberá um link de recuperação de senha no e-mail.'
+            ];
+        }
+
+        // Verifica se o usuário está ativo
+        if (!$usuario->ativo) {
+            throw new \Exception('Usuário inativo', 403);
+        }
+
+        // Remove tokens antigos para este email
+        DB::table('password_reset_tokens')
+            ->where('email', $email)
+            ->delete();
+
+        // Gera um token único
+        $token = Str::random(64);
+
+        // Armazena o token no banco de dados
+        DB::table('password_reset_tokens')->insert([
+            'email' => $email,
+            'token' => Hash::make($token),
+            'created_at' => now(),
+        ]);
+
+        // URL do frontend para redefinir senha baseada no tipo de usuário
+        $frontendUrl = config('app.frontend_url', 'http://localhost:3000');
+        
+        // Define o caminho baseado no tipo de usuário
+        if ($usuario->tipo_usuario === 'administrador') {
+            // URL para administradores: /admin/redefinir-senha
+            $path = '/admin/redefinir-senha';
+        } else {
+            // URL para clientes: /cliente/redefinir-senha
+            $path = '/cliente/redefinir-senha';
+        }
+        
+        $resetUrl = $frontendUrl . $path . '?token=' . $token . '&email=' . urlencode($email);
+
+        try {
+            // Envia o email de recuperação
+            Mail::to($usuario->email)->send(
+                new PasswordResetMail(
+                    $resetUrl,
+                    $usuario->primeiro_nome,
+                    config('auth.passwords.usuarios.expire', 60)
+                )
+            );
+
+            Log::info('Email de recuperação de senha enviado', [
+                'usuario_id' => $usuario->id,
+                'email' => $usuario->email
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Falha ao enviar email de recuperação de senha', [
+                'usuario_id' => $usuario->id,
+                'email' => $usuario->email,
+                'erro' => $e->getMessage()
+            ]);
+            
+            throw new \Exception('Falha ao enviar email de recuperação. Tente novamente mais tarde.', 500);
+        }
+
+        return [
+            'sucesso' => true,
+            'mensagem' => 'Se o email existir em nosso sistema, você receberá um link de recuperação de senha.'
+        ];
+    }
+
+    /**
+     * Redefine a senha do usuário usando o token de recuperação
+     * 
+     * @param string $email Email do usuário
+     * @param string $token Token de recuperação
+     * @param string $novaSenha Nova senha
+     * @param string $confirmacaoSenha Confirmação da nova senha
+     * @return array
+     * @throws \Exception
+     */
+    public function redefinirSenha(string $email, string $token, string $novaSenha, string $confirmacaoSenha): array
+    {
+        // Verifica se as senhas coincidem
+        if ($novaSenha !== $confirmacaoSenha) {
+            throw new \Exception('As senhas não coincidem', 422);
+        }
+
+        // Busca o token no banco
+        $resetRecord = DB::table('password_reset_tokens')
+            ->where('email', $email)
+            ->first();
+
+        if (!$resetRecord) {
+            throw new \Exception('Token de recuperação inválido ou expirado', 422);
+        }
+
+        // Verifica se o token corresponde
+        if (!Hash::check($token, $resetRecord->token)) {
+            throw new \Exception('Token de recuperação inválido ou expirado', 422);
+        }
+
+        // Verifica se o token não expirou (padrão: 60 minutos)
+        $expirationMinutes = config('auth.passwords.usuarios.expire', 60);
+        $tokenCreatedAt = \Carbon\Carbon::parse($resetRecord->created_at);
+        
+        if ($tokenCreatedAt->addMinutes($expirationMinutes)->isPast()) {
+            // Remove o token expirado
+            DB::table('password_reset_tokens')
+                ->where('email', $email)
+                ->delete();
+                
+            throw new \Exception('Token de recuperação expirado. Solicite um novo link de recuperação.', 422);
+        }
+
+        // Busca o usuário
+        $usuario = Usuario::where('email', $email)->first();
+
+        if (!$usuario) {
+            throw new \Exception('Usuário não encontrado', 404);
+        }
+
+        // Atualiza a senha
+        $usuario->senha = $novaSenha; // O mutator no model fará o hash automaticamente
+        $usuario->save();
+
+        // Remove o token usado
+        DB::table('password_reset_tokens')
+            ->where('email', $email)
+            ->delete();
+
+        // Invalida todos os tokens JWT existentes do usuário (opcional, mas recomendado)
+        // Isso força o usuário a fazer login novamente
+        
+        Log::info('Senha redefinida com sucesso', [
+            'usuario_id' => $usuario->id,
+            'email' => $usuario->email
+        ]);
+
+        return [
+            'sucesso' => true,
+            'mensagem' => 'Senha redefinida com sucesso! Você já pode fazer login com sua nova senha.',
+            'usuario' => [
+                'email' => $usuario->email,
+                'nome' => $usuario->primeiro_nome
             ]
         ];
     }

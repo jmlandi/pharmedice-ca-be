@@ -42,25 +42,35 @@ class EmailVerificationTest extends TestCase
             'email_verified_at' => null // Email não verificado
         ]);
 
-        // Gerar URL de verificação válida
+        // Gerar URL de verificação válida para extrair parâmetros
+        // A URL assinada deve incluir id e hash como parte da URL assinada
         $urlVerificacao = URL::temporarySignedRoute(
             'verification.verify',
             now()->addMinutes(60),
-            ['id' => $usuario->id, 'hash' => sha1($usuario->email)]
+            [
+                'id' => $usuario->id,
+                'hash' => sha1($usuario->email)
+            ]
         );
 
-        // Gerar token JWT diretamente para o usuário
-        $token = JWTAuth::fromUser($usuario);
+        // Extrair parâmetros da URL
+        $parsedUrl = parse_url($urlVerificacao);
+        parse_str($parsedUrl['query'], $params);
 
-        // Act: Verificar email usando a URL assinada
-        $response = $this->withHeaders([
-            'Authorization' => 'Bearer ' . $token
-        ])->get($urlVerificacao);
+        // Act: Verificar email usando POST com parâmetros incluindo id e hash
+        $response = $this->postJson('/api/auth/verificar-email', [
+            'id' => $params['id'] ?? $usuario->id,
+            'hash' => $params['hash'] ?? sha1($usuario->email),
+            'expires' => $params['expires'],
+            'signature' => $params['signature']
+        ]);
 
         // Assert: Verificação deve ser bem-sucedida
         $response->assertStatus(200)
-                ->assertSee('Email Verificado!')
-                ->assertSee('Seu email foi verificado com sucesso.');
+                ->assertJson([
+                    'sucesso' => true,
+                    'mensagem' => 'Email verificado com sucesso!'
+                ]);
 
         // Verificar se email foi marcado como verificado no banco
         $usuario->refresh();
@@ -92,16 +102,24 @@ class EmailVerificationTest extends TestCase
             ['id' => $usuario->id, 'hash' => sha1($usuario->email)]
         );
 
-        // Gerar token JWT diretamente para o usuário
-        $token = JWTAuth::fromUser($usuario);
+        // Extrair parâmetros da URL
+        $parsedUrl = parse_url($urlVerificacao);
+        parse_str($parsedUrl['query'], $params);
 
         // Act: Tentar verificar com URL expirada
-        $response = $this->withHeaders([
-            'Authorization' => 'Bearer ' . $token
-        ])->get($urlVerificacao);
+        $response = $this->postJson('/api/auth/verificar-email', [
+            'id' => $usuario->id,
+            'hash' => sha1($usuario->email),
+            'expires' => $params['expires'],
+            'signature' => $params['signature']
+        ]);
 
-        // Assert: Deve falhar com erro de link inválido/expirado (403 para assinatura inválida)
-        $response->assertStatus(403);
+        // Assert: Deve falhar com erro de link inválido/expirado
+        $response->assertStatus(422)
+                ->assertJson([
+                    'sucesso' => false,
+                    'codigo' => 'LINK_INVALIDO'
+                ]);
 
         // Verificar que email ainda não foi verificado
         $usuario->refresh();
@@ -214,16 +232,19 @@ class EmailVerificationTest extends TestCase
             'email_verified_at' => null
         ]);
 
-        // Gerar URL de verificação SEM assinatura (inválida)
-        $urlVerificacao = route('verification.verify', [
-            'id' => $usuario->id, 
-            'hash' => sha1($usuario->email)
+        // Act: Tentar verificar com parâmetros sem assinatura válida
+        $response = $this->postJson('/api/auth/verificar-email', [
+            'id' => $usuario->id,
+            'hash' => sha1($usuario->email),
+            'expires' => now()->addMinutes(60)->timestamp,
+            'signature' => 'invalid_signature'
         ]);
 
-        // Act: Tentar verificar com URL não assinada
-        $response = $this->get($urlVerificacao);
-
-        // Assert: Deve retornar 403 para link não assinado
-        $response->assertStatus(403);
+        // Assert: Deve retornar erro de link inválido
+        $response->assertStatus(422)
+                ->assertJson([
+                    'sucesso' => false,
+                    'codigo' => 'LINK_INVALIDO'
+                ]);
     }
 }
