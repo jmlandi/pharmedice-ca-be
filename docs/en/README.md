@@ -28,6 +28,8 @@ This system provides a complete backend solution for managing customer documents
 
 ### API Documentation  
 - **[📋 API Overview](./api/README.md)** - Complete API reference
+- **[🔌 Frontend Integration](./frontend-integration.md)** - Complete guide for frontend developers
+- **[💻 Framework Examples](./frontend-examples.md)** - React, Vue, Angular implementation examples
 
 ### System Concepts
 - **[🏗️ Architecture Overview](./concepts/README.md)** - System architecture and design
