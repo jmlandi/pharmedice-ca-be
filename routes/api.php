@@ -5,12 +5,13 @@ use App\Http\Controllers\LaudoController;
 use App\Http\Controllers\UsuarioController;
 use Illuminate\Support\Facades\Route;
 
-// Endpoint para testar CORS
-Route::get('test-cors', function () {
+// Rota raiz - status da API
+Route::get('/', function () {
     return response()->json([
-        'mensagem' => 'CORS está funcionando!',
-        'timestamp' => now(),
-        'origin' => request()->header('Origin')
+        'status' => 'online',
+        'mensagem' => 'Pharmedice Customer Area API está online',
+        'versao' => '1.0.0',
+        'timestamp' => now()
     ]);
 });
 
