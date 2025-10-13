@@ -1,0 +1,82 @@
+services:
+  # Web Service
+  - type: web
+    name: pharmedice-customer-area-be
+    runtime: docker
+    plan: starter
+    region: oregon
+    healthCheckPath: /
+    envVars:
+      - key: APP_NAME
+        value: Pharmedice
+      - key: APP_ENV
+        value: production
+      - key: APP_KEY
+        generateValue: true
+      - key: APP_DEBUG
+        value: false
+      - key: APP_URL
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: APP_LOCALE
+        value: en
+      - key: APP_FALLBACK_LOCALE
+        value: en
+      - key: LOG_CHANNEL
+        value: stack
+      - key: LOG_LEVEL
+        value: error
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        fromDatabase:
+          name: pharmedice-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: pharmedice-db
+          property: port
+      - key: DB_DATABASE
+        fromDatabase:
+          name: pharmedice-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: pharmedice-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: pharmedice-db
+          property: password
+      - key: SESSION_DRIVER
+        value: database
+      - key: CACHE_STORE
+        value: database
+      - key: QUEUE_CONNECTION
+        value: database
+      - key: MAIL_MAILER
+        value: resend
+      - key: RESEND_KEY
+        sync: false
+      - key: MAIL_FROM_ADDRESS
+        sync: false
+      - key: MAIL_FROM_NAME
+        value: Pharmedice | Área do Cliente
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_DEFAULT_REGION
+        value: us-east-1
+      - key: AWS_BUCKET
+        value: laudos-pharmedice
+      - key: JWT_SECRET
+        generateValue: true
+
+# Database
+databases:
+  - name: pharmedice-db
+    databaseName: pharmedice
+    plan: starter
+    region: oregon
