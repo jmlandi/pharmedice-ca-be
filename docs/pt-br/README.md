@@ -31,6 +31,8 @@ Este sistema fornece uma solução completa de backend para gerenciar documentos
 
 ### Documentação da API  
 - **[📋 Visão Geral da API](./api/README.md)** - Referência completa da API
+- **[🔌 Integração Frontend](./integracao-frontend.md)** - Guia completo para desenvolvedores frontend
+- **[💻 Exemplos de Frameworks](./exemplos-frontend.md)** - Exemplos de implementação React, Vue, Angular
 
 ### Conceitos do Sistema
 - **[🏗️ Visão Geral da Arquitetura](./concepts/README.md)** - Arquitetura e design do sistema
