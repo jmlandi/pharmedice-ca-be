@@ -38,6 +38,7 @@ return [
         '#^http://localhost:\d+$#',
         '#^http://127\.0\.0\.1:\d+$#',
         '#^https://.*\.pharmedice\.com$#',
+        '#^https://.*\.pharmedice\.com\.br$#',
         // all pharmedice.com subdomains or paths
         
         // Descomente para permitir todos os subdomínios em produção
@@ -46,9 +47,9 @@ return [
 
     'allowed_headers' => ['*'],
 
-    'exposed_headers' => [],
+    'exposed_headers' => ['Authorization', 'Content-Type'],
 
-    'max_age' => 0,
+    'max_age' => 86400,
 
     'supports_credentials' => true,
 
