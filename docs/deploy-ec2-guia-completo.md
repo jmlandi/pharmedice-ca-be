@@ -127,7 +127,7 @@ sudo nano /etc/nginx/conf.d/pharmedice-api.conf
 ```nginx
 server {
     listen 80;
-    server_name api.seudominio.com;  # Substitua pelo seu domínio
+    server_name api-pharmedice.marcoslandi.com;
     
     root /home/ec2-user/pharmedice-ca-be/public;
     index index.php;
@@ -145,7 +145,7 @@ server {
     add_header Referrer-Policy "no-referrer-when-downgrade" always;
 
     # CORS (se necessário para seu frontend)
-    add_header 'Access-Control-Allow-Origin' 'https://seudominio.com' always;
+    add_header 'Access-Control-Allow-Origin' 'https://pharmedice.marcoslandi.com' always;
     add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, PATCH, OPTIONS' always;
     add_header 'Access-Control-Allow-Headers' 'Authorization, Content-Type, Accept, Origin' always;
     add_header 'Access-Control-Allow-Credentials' 'true' always;
@@ -267,7 +267,7 @@ sudo yum install -y certbot python3-certbot-nginx
 
 ```bash
 # Certifique-se que seu domínio aponta para o IP do EC2
-sudo certbot --nginx -d api.seudominio.com
+sudo certbot --nginx -d api-pharmedice.marcoslandi.com
 
 # Responda às perguntas:
 # - Email: seu@email.com
@@ -297,19 +297,19 @@ sudo nano /etc/nginx/conf.d/pharmedice-api.conf
 # Redirecionar HTTP para HTTPS
 server {
     listen 80;
-    server_name api.seudominio.com;
+    server_name api-pharmedice.marcoslandi.com;
     return 301 https://$server_name$request_uri;
 }
 
 # Configuração HTTPS
 server {
     listen 443 ssl http2;
-    server_name api.seudominio.com;
+    server_name api-pharmedice.marcoslandi.com;
     
     # Certificados SSL
-    ssl_certificate /etc/letsencrypt/live/api.seudominio.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/api.seudominio.com/privkey.pem;
-    ssl_trusted_certificate /etc/letsencrypt/live/api.seudominio.com/chain.pem;
+    ssl_certificate /etc/letsencrypt/live/api-pharmedice.marcoslandi.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/api-pharmedice.marcoslandi.com/privkey.pem;
+    ssl_trusted_certificate /etc/letsencrypt/live/api-pharmedice.marcoslandi.com/chain.pem;
     
     # Configurações SSL modernas
     ssl_protocols TLSv1.2 TLSv1.3;
@@ -351,9 +351,9 @@ APP_NAME="Pharmedice"
 APP_ENV=production
 APP_KEY=  # Será gerado
 APP_DEBUG=false
-APP_URL=https://api.seudominio.com
+APP_URL=https://api-pharmedice.marcoslandi.com
 
-FRONTEND_URL=https://seudominio.com
+FRONTEND_URL=https://pharmedice.marcoslandi.com
 
 LOG_CHANNEL=stack
 LOG_LEVEL=error
@@ -383,7 +383,7 @@ QUEUE_CONNECTION=database  # ou redis se tiver
 # Mail
 MAIL_MAILER=resend
 RESEND_KEY=sua_chave_resend
-MAIL_FROM_ADDRESS="nao-responda@seudominio.com"
+MAIL_FROM_ADDRESS="nao-responda@marcoslandi.com"
 MAIL_FROM_NAME="Pharmedice | Área do Cliente"
 
 # AWS S3
@@ -465,7 +465,7 @@ No seu provedor de domínio (GoDaddy, Namecheap, Route 53, etc.):
 **Opção 1: Registro A (se usar Elastic IP)**
 ```
 Tipo: A
-Nome: api (ou @)
+Nome: api-pharmedice
 Valor: 3.XXX.XXX.XXX (IP Elástico do EC2)
 TTL: 3600
 ```
@@ -473,9 +473,9 @@ TTL: 3600
 **Opção 2: Route 53 (recomendado se usar AWS)**
 
 ```bash
-# No AWS Console > Route 53 > Hosted Zones
+# No AWS Console > Route 53 > Hosted Zones > marcoslandi.com
 # Criar registro:
-Nome: api.seudominio.com
+Nome: api-pharmedice.marcoslandi.com
 Tipo: A
 Valor: [Alias para instância EC2 ou IP Elástico]
 ```
@@ -484,9 +484,9 @@ Valor: [Alias para instância EC2 ou IP Elástico]
 
 ```bash
 # No seu computador local
-nslookup api.seudominio.com
+nslookup api-pharmedice.marcoslandi.com
 # ou
-dig api.seudominio.com
+dig api-pharmedice.marcoslandi.com
 ```
 
 ---
@@ -693,8 +693,8 @@ sudo systemctl restart nginx php-fpm
 tail -f storage/logs/laravel.log
 
 # Testar API
-curl -I https://api.seudominio.com
-curl https://api.seudominio.com/health
+curl -I https://api-pharmedice.marcoslandi.com
+curl https://api-pharmedice.marcoslandi.com/health
 
 # Limpar todos os caches
 php artisan optimize:clear
@@ -738,7 +738,7 @@ df -h
 ### Não consegue acessar pelo domínio
 ```bash
 # Verificar DNS
-nslookup api.seudominio.com
+nslookup api-pharmedice.marcoslandi.com
 
 # Verificar Security Group (porta 80 e 443 abertas)
 # Verificar se Nginx está ouvindo
@@ -749,4 +749,4 @@ sudo netstat -tulpn | grep nginx
 
 **🎉 Pronto! Sua API está pública e acessível!**
 
-Acesse: `https://api.seudominio.com/health`
+Acesse: `https://api-pharmedice.marcoslandi.com/health`
