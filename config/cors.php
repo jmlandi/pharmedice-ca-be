@@ -27,7 +27,7 @@ return [
         'http://127.0.0.1:3000',
         'http://127.0.0.1:8080',
         
-        // Adicione aqui seus domínios de produção
+        // Domínios de produção
         'https://cliente.pharmedice.com.br',
         'https://api.pharmedice.com.br',
         'https://api-pharmedice.marcoslandi.com',
@@ -39,6 +39,7 @@ return [
         '#^http://127\.0\.0\.1:\d+$#',
         '#^https://.*\.pharmedice\.com$#',
         '#^https://.*\.pharmedice\.com\.br$#',
+        '#^https://.*\.marcoslandi\.com$#',
         // all pharmedice.com subdomains or paths
         
         // Descomente para permitir todos os subdomínios em produção
