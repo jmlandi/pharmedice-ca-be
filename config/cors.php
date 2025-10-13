@@ -28,14 +28,17 @@ return [
         'http://127.0.0.1:8080',
         
         // Adicione aqui seus domínios de produção
-        'https://cliente.pharmedice.com',
-        'https://api.pharmedice.com',
+        'https://cliente.pharmedice.com.br',
+        'https://api.pharmedice.com.br',
+        'https://api-pharmedice.marcoslandi.com',
     ],
 
     'allowed_origins_patterns' => [
         // Permite subdomínios em desenvolvimento
         '#^http://localhost:\d+$#',
         '#^http://127\.0\.0\.1:\d+$#',
+        '#^https://.*\.pharmedice\.com$#',
+        // all pharmedice.com subdomains or paths
         
         // Descomente para permitir todos os subdomínios em produção
         // '#^https://.*\.meusite\.com$#',
