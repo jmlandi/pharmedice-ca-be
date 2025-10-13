@@ -32,6 +32,7 @@ class Usuario extends Authenticatable implements MustVerifyEmail, JWTSubject
         'aceite_comunicacoes_sms',
         'aceite_comunicacoes_whatsapp',
         'ativo',
+        'email_verified_at',
     ];
 
     protected $hidden = [
@@ -87,11 +88,6 @@ class Usuario extends Authenticatable implements MustVerifyEmail, JWTSubject
     }
 
     // Relationships
-    public function laudos(): HasMany
-    {
-        return $this->hasMany(Laudo::class);
-    }
-
     public function permissoes(): BelongsToMany
     {
         return $this->belongsToMany(Permissao::class, 'permissoes_de_usuario');

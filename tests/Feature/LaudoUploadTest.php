@@ -27,7 +27,8 @@ class LaudoUploadTest extends TestCase
         // Arrange: Criar usuário admin
         $admin = Usuario::factory()->create([
             'tipo_usuario' => 'administrador',
-            'email' => 'admin@test.com'
+            'email' => 'admin@test.com',
+            'email_verified_at' => now()
         ]);
 
         $token = JWTAuth::fromUser($admin);
@@ -62,7 +63,6 @@ class LaudoUploadTest extends TestCase
         $this->assertDatabaseHas('laudos', [
             'titulo' => 'Laudo de Teste',
             'descricao' => 'Descrição do laudo de teste',
-            'usuario_id' => $admin->id,
             'url_arquivo' => $laudoData['url_arquivo']
         ]);
     }
@@ -72,7 +72,8 @@ class LaudoUploadTest extends TestCase
     {
         // Arrange: Criar usuário admin
         $admin = Usuario::factory()->create([
-            'tipo_usuario' => 'administrador'
+            'tipo_usuario' => 'administrador',
+            'email_verified_at' => now()
         ]);
 
         $token = JWTAuth::fromUser($admin);
@@ -98,7 +99,8 @@ class LaudoUploadTest extends TestCase
     {
         // Arrange: Criar usuário cliente
         $cliente = Usuario::factory()->create([
-            'tipo_usuario' => 'usuario'
+            'tipo_usuario' => 'usuario',
+            'email_verified_at' => now()
         ]);
 
         $token = JWTAuth::fromUser($cliente);
@@ -120,11 +122,16 @@ class LaudoUploadTest extends TestCase
     public function pode_fazer_download_de_laudo()
     {
         // Arrange: Criar laudo no banco
-        $admin = Usuario::factory()->create(['tipo_usuario' => 'administrador']);
-        $cliente = Usuario::factory()->create(['tipo_usuario' => 'usuario']);
+        $admin = Usuario::factory()->create([
+            'tipo_usuario' => 'administrador',
+            'email_verified_at' => now()
+        ]);
+        $cliente = Usuario::factory()->create([
+            'tipo_usuario' => 'usuario',
+            'email_verified_at' => now()
+        ]);
         
         $laudo = \App\Models\Laudo::create([
-            'usuario_id' => $admin->id,
             'titulo' => 'Laudo para Download',
             'descricao' => 'Teste de download',
             'url_arquivo' => 'laudos/2024/10/test-file.pdf',

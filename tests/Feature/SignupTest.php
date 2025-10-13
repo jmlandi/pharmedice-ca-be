@@ -45,7 +45,7 @@ class SignupTest extends TestCase
         ];
 
         // Act: Fazer requisição de registro
-        $response = $this->postJson('/api/auth/registrar', $dadosRegistro);
+        $response = $this->postJson('/api/auth/registrar-usuario', $dadosRegistro);
 
         // Assert: Verificar resposta de sucesso
         $response->assertStatus(201)
@@ -118,7 +118,7 @@ class SignupTest extends TestCase
         ];
 
         // Act: Tentar registrar com email duplicado
-        $response = $this->postJson('/api/auth/registrar', $dadosRegistro);
+        $response = $this->postJson('/api/auth/registrar-usuario', $dadosRegistro);
 
         // Assert: Deve falhar com erro de validação
         $response->assertStatus(422)
@@ -165,7 +165,7 @@ class SignupTest extends TestCase
         ];
 
         // Act: Tentar registrar com CPF duplicado
-        $response = $this->postJson('/api/auth/registrar', $dadosRegistro);
+        $response = $this->postJson('/api/auth/registrar-usuario', $dadosRegistro);
 
         // Assert: Deve falhar com erro de validação
         $response->assertStatus(422)
@@ -183,7 +183,7 @@ class SignupTest extends TestCase
     public function deve_validar_campos_obrigatorios()
     {
         // Act: Tentar registrar sem dados obrigatórios
-        $response = $this->postJson('/api/auth/registrar', []);
+        $response = $this->postJson('/api/auth/registrar-usuario', []);
 
         // Assert: Deve falhar com múltiplos erros de validação
         $response->assertStatus(422)
@@ -237,7 +237,7 @@ class SignupTest extends TestCase
         ];
 
         // Act: Tentar registrar com senha fraca
-        $response = $this->postJson('/api/auth/registrar', $dadosRegistro);
+        $response = $this->postJson('/api/auth/registrar-usuario', $dadosRegistro);
 
         // Assert: Deve falhar com erro de validação de senha
         $response->assertStatus(422);
@@ -264,7 +264,7 @@ class SignupTest extends TestCase
         ];
 
         // Act: Tentar registrar com telefone em formato inválido
-        $response = $this->postJson('/api/auth/registrar', $dadosRegistro);
+        $response = $this->postJson('/api/auth/registrar-usuario', $dadosRegistro);
 
         // Assert: Deve falhar com erro de validação de telefone
         $response->assertStatus(422);
@@ -291,7 +291,7 @@ class SignupTest extends TestCase
         ];
 
         // Act: Tentar registrar com CPF inválido
-        $response = $this->postJson('/api/auth/registrar', $dadosRegistro);
+        $response = $this->postJson('/api/auth/registrar-usuario', $dadosRegistro);
 
         // Assert: Deve falhar com erro de validação de CPF
         $response->assertStatus(422);
@@ -318,7 +318,7 @@ class SignupTest extends TestCase
         ];
 
         // Act: Tentar registrar com data de nascimento futura
-        $response = $this->postJson('/api/auth/registrar', $dadosRegistro);
+        $response = $this->postJson('/api/auth/registrar-usuario', $dadosRegistro);
 
         // Assert: Deve falhar com erro de validação de data
         $response->assertStatus(422);
@@ -345,7 +345,7 @@ class SignupTest extends TestCase
         ];
 
         // Act: Tentar registrar sem aceitar termos
-        $response = $this->postJson('/api/auth/registrar', $dadosRegistro);
+        $response = $this->postJson('/api/auth/registrar-usuario', $dadosRegistro);
 
         // Assert: Deve falhar com erro de validação
         $response->assertStatus(422);

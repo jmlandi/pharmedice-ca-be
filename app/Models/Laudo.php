@@ -16,7 +16,6 @@ class Laudo extends Model
     protected $table = 'laudos';
 
     protected $fillable = [
-        'usuario_id', // ID do usuário que CRIOU o laudo (não necessariamente o paciente)
         'titulo',
         'descricao',
         'url_arquivo',
@@ -29,17 +28,7 @@ class Laudo extends Model
         'updated_at' => 'datetime',
     ];
 
-    // Relationships
-    public function usuario(): BelongsTo
-    {
-        return $this->belongsTo(Usuario::class);
-    }
-
-    // Alias para deixar claro que é o criador do laudo
-    public function criador(): BelongsTo
-    {
-        return $this->belongsTo(Usuario::class, 'usuario_id');
-    }
+    // Relacionamentos removidos - laudos agora são independentes de usuários específicos
 
     // Scopes
     public function scopeAtivo($query)
@@ -47,10 +36,7 @@ class Laudo extends Model
         return $query->where('ativo', true);
     }
 
-    public function scopeDoUsuario($query, $usuarioId)
-    {
-        return $query->where('usuario_id', $usuarioId);
-    }
+    // Scope removido - laudos não são mais associados a usuários específicos
 
     // Accessors
     public function getArquivoUrlAttribute()
@@ -93,11 +79,7 @@ class Laudo extends Model
         return $nomeCompleto;
     }
 
-    // Methods
-    public function pertenceAoUsuario($usuarioId): bool
-    {
-        return $this->usuario_id == $usuarioId;
-    }
+    // Método removido - laudos não pertencem mais a usuários específicos
 
     public function deleteArquivo(): bool
     {

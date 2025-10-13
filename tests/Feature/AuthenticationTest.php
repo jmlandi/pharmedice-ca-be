@@ -22,9 +22,9 @@ class AuthenticationTest extends TestCase
     }
 
     /** @test */
-    public function pode_fazer_login_com_credenciais_validas()
+    public function pode_fazer_login_com_credenciais_validas_e_email_verificado()
     {
-        // Arrange: Criar usuário de teste
+        // Arrange: Criar usuário de teste com email verificado
         $usuario = Usuario::create([
             'primeiro_nome' => 'João',
             'segundo_nome' => 'Silva',
@@ -38,7 +38,8 @@ class AuthenticationTest extends TestCase
             'aceite_comunicacoes_email' => true,
             'aceite_comunicacoes_sms' => false,
             'aceite_comunicacoes_whatsapp' => false,
-            'ativo' => true
+            'ativo' => true,
+            'email_verified_at' => now() // Email verificado
         ]);
 
         // Act: Tentar fazer login
@@ -55,12 +56,13 @@ class AuthenticationTest extends TestCase
                         'access_token',
                         'token_type',
                         'expires_in',
-                        'user' => [
+                        'usuario' => [
                             'id',
                             'primeiro_nome',
                             'segundo_nome',
                             'email',
-                            'tipo_usuario'
+                            'tipo_usuario',
+                            'email_verificado'
                         ]
                     ]
                 ]);
@@ -68,12 +70,49 @@ class AuthenticationTest extends TestCase
         $this->assertTrue($response->json('success'));
         $this->assertEquals('bearer', $response->json('data.token_type'));
         $this->assertNotNull($response->json('data.access_token'));
+        $this->assertTrue($response->json('data.usuario.email_verificado'));
+    }
+
+    /** @test */
+    public function nao_pode_fazer_login_sem_email_verificado()
+    {
+        // Arrange: Criar usuário sem email verificado
+        $usuario = Usuario::create([
+            'primeiro_nome' => 'Maria',
+            'segundo_nome' => 'Santos',
+            'apelido' => 'maria',
+            'email' => 'maria@test.com',
+            'senha' => 'password123',
+            'telefone' => '11999999998',
+            'numero_documento' => '12345678902',
+            'data_nascimento' => '1990-01-01',
+            'tipo_usuario' => 'usuario',
+            'aceite_comunicacoes_email' => true,
+            'aceite_comunicacoes_sms' => false,
+            'aceite_comunicacoes_whatsapp' => false,
+            'ativo' => true,
+            // email_verified_at permanece null
+        ]);
+
+        // Act: Tentar fazer login
+        $response = $this->postJson('/api/auth/login', [
+            'email' => 'maria@test.com',
+            'senha' => 'password123'
+        ]);
+
+        // Assert: Login deve ser bloqueado
+        $response->assertStatus(403)
+                ->assertJson([
+                    'success' => false,
+                    'message' => 'Email não verificado. Verifique sua caixa de entrada e clique no link de verificação enviado no momento do cadastro.'
+                ]);
     }
 
     /** @test */
     public function nao_pode_fazer_login_com_credenciais_invalidas()
     {
-        // Arrange: Criar usuário de teste
+        // Arrange: Criar usuário de teste com email verificado
+        // Arrange: Criar usuário com credenciais incorretas
         Usuario::create([
             'primeiro_nome' => 'João',
             'segundo_nome' => 'Silva',
@@ -87,7 +126,8 @@ class AuthenticationTest extends TestCase
             'aceite_comunicacoes_email' => true,
             'aceite_comunicacoes_sms' => false,
             'aceite_comunicacoes_whatsapp' => false,
-            'ativo' => true
+            'ativo' => true,
+            'email_verified_at' => now()
         ]);
 
         // Act: Tentar login com senha incorreta
@@ -121,7 +161,8 @@ class AuthenticationTest extends TestCase
             'aceite_comunicacoes_email' => true,
             'aceite_comunicacoes_sms' => false,
             'aceite_comunicacoes_whatsapp' => false,
-            'ativo' => false // Usuário inativo
+            'ativo' => false,
+            'email_verified_at' => now()
         ]);
 
         // Act: Tentar fazer login
@@ -155,7 +196,8 @@ class AuthenticationTest extends TestCase
             'aceite_comunicacoes_email' => true,
             'aceite_comunicacoes_sms' => true,
             'aceite_comunicacoes_whatsapp' => true,
-            'ativo' => true
+            'ativo' => true,
+            'email_verified_at' => now()
         ]);
 
         $token = JWTAuth::fromUser($usuario);
@@ -248,7 +290,8 @@ class AuthenticationTest extends TestCase
             'aceite_comunicacoes_email' => true,
             'aceite_comunicacoes_sms' => false,
             'aceite_comunicacoes_whatsapp' => true,
-            'ativo' => true
+            'ativo' => true,
+            'email_verified_at' => now()
         ]);
 
         $originalToken = JWTAuth::fromUser($usuario);
@@ -278,5 +321,74 @@ class AuthenticationTest extends TestCase
         ])->getJson('/api/auth/me');
 
         $response->assertStatus(200);
+    }
+
+    /** @test */
+    public function nao_pode_fazer_login_com_email_nao_verificado()
+    {
+        // Arrange: Criar usuário sem verificação de email
+        Usuario::create([
+            'primeiro_nome' => 'João',
+            'segundo_nome' => 'Silva',
+            'apelido' => 'joao',
+            'email' => 'joao@test.com',
+            'senha' => 'password123',
+            'telefone' => '11999999999',
+            'numero_documento' => '12345678901',
+            'data_nascimento' => '1990-01-01',
+            'tipo_usuario' => 'usuario',
+            'aceite_comunicacoes_email' => true,
+            'aceite_comunicacoes_sms' => false,
+            'aceite_comunicacoes_whatsapp' => false,
+            'ativo' => true,
+            'email_verified_at' => null
+        ]);
+
+        // Act: Tentar fazer login
+        $response = $this->postJson('/api/auth/login', [
+            'email' => 'joao@test.com',
+            'senha' => 'password123'
+        ]);
+
+        // Assert: Verificar resposta de erro
+        $response->assertStatus(403)
+            ->assertJson([
+                'success' => false,
+                'message' => 'Email não verificado. Verifique sua caixa de entrada e clique no link de verificação enviado no momento do cadastro.'
+            ]);
+    }
+
+    /** @test */
+    public function pode_reenviar_email_verificacao()
+    {
+        // Arrange: Criar usuário sem verificação de email
+        Usuario::create([
+            'primeiro_nome' => 'João',
+            'segundo_nome' => 'Silva',
+            'apelido' => 'joao',
+            'email' => 'joao@test.com',
+            'senha' => 'password123',
+            'telefone' => '11999999999',
+            'numero_documento' => '12345678901',
+            'data_nascimento' => '1990-01-01',
+            'tipo_usuario' => 'usuario',
+            'aceite_comunicacoes_email' => true,
+            'aceite_comunicacoes_sms' => false,
+            'aceite_comunicacoes_whatsapp' => false,
+            'ativo' => true,
+            'email_verified_at' => null
+        ]);
+
+        // Act: Reenviar email de verificação
+        $response = $this->postJson('/api/auth/reenviar-verificacao-email-publico', [
+            'email' => 'joao@test.com'
+        ]);
+
+        // Assert: Verificar resposta de sucesso
+        $response->assertStatus(200)
+            ->assertJson([
+                'sucesso' => true,
+                'mensagem' => 'Email de verificação reenviado para joao@test.com'
+            ]);
     }
 }

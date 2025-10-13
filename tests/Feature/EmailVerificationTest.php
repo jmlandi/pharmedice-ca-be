@@ -59,9 +59,8 @@ class EmailVerificationTest extends TestCase
 
         // Assert: Verificação deve ser bem-sucedida
         $response->assertStatus(200)
-                ->assertJson([
-                    'sucesso' => true
-                ]);
+                ->assertSee('Email Verificado!')
+                ->assertSee('Seu email foi verificado com sucesso.');
 
         // Verificar se email foi marcado como verificado no banco
         $usuario->refresh();
@@ -197,17 +196,17 @@ class EmailVerificationTest extends TestCase
         $response->assertStatus(401);
     }
 
-    /** @test */
-    public function deve_exigir_autenticacao_para_verificar_email()
+        /** @test */
+    public function nao_pode_verificar_email_com_link_nao_assinado()
     {
-        // Arrange: Criar usuário
+        // Arrange: Criar usuário sem email verificado
         $usuario = Usuario::create([
             'primeiro_nome' => 'João',
             'segundo_nome' => 'Silva',
-            'apelido' => 'joaosilva',
-            'email' => 'joao@exemplo.com',
-            'senha' => bcrypt('MinhaSenh@123'),
-            'telefone' => '(11) 99999-9999',
+            'apelido' => 'joao',
+            'email' => 'joao@test.com',
+            'senha' => 'password123',
+            'telefone' => '11999999999',
             'numero_documento' => '12345678901',
             'data_nascimento' => '1990-05-15',
             'tipo_usuario' => 'usuario',
@@ -215,17 +214,16 @@ class EmailVerificationTest extends TestCase
             'email_verified_at' => null
         ]);
 
-        // Gerar URL de verificação válida
-        $urlVerificacao = URL::temporarySignedRoute(
-            'verification.verify',
-            now()->addMinutes(60),
-            ['id' => $usuario->id, 'hash' => sha1($usuario->email)]
-        );
+        // Gerar URL de verificação SEM assinatura (inválida)
+        $urlVerificacao = route('verification.verify', [
+            'id' => $usuario->id, 
+            'hash' => sha1($usuario->email)
+        ]);
 
-        // Act: Tentar verificar sem token de autenticação
+        // Act: Tentar verificar com URL não assinada
         $response = $this->get($urlVerificacao);
 
-        // Assert: Deve falhar por falta de autenticação
-        $response->assertStatus(401);
+        // Assert: Deve retornar 403 para link não assinado
+        $response->assertStatus(403);
     }
 }

@@ -33,6 +33,11 @@ class AuthService
             throw new \Exception('Credenciais inválidas', 401);
         }
 
+        // Verifica se o email foi verificado
+        if (!$usuario->hasVerifiedEmail()) {
+            throw new \Exception('Email não verificado. Verifique sua caixa de entrada e clique no link de verificação enviado no momento do cadastro.', 403);
+        }
+
         // Gera o token JWT
         $token = JWTAuth::fromUser($usuario);
 
@@ -40,13 +45,14 @@ class AuthService
             'access_token' => $token,
             'token_type' => 'bearer',
             'expires_in' => JWTAuth::factory()->getTTL() * 60,
-            'user' => [
+            'usuario' => [
                 'id' => $usuario->id,
                 'primeiro_nome' => $usuario->primeiro_nome,
                 'segundo_nome' => $usuario->segundo_nome,
                 'email' => $usuario->email,
                 'tipo_usuario' => $usuario->tipo_usuario,
                 'is_admin' => $usuario->is_admin,
+                'email_verificado' => $usuario->hasVerifiedEmail(),
             ]
         ];
     }
@@ -173,6 +179,35 @@ class AuthService
     public function reenviarEmailVerificacao(): array
     {
         $usuario = JWTAuth::parseToken()->authenticate();
+
+        // Verifica se o email já foi verificado
+        if ($usuario->hasVerifiedEmail()) {
+            throw new \Exception('Este email já foi verificado', 422);
+        }
+
+        // Envia novo email de verificação
+        $this->enviarEmailVerificacao($usuario);
+
+        return [
+            'success' => true,
+            'mensagem' => 'Email de verificação reenviado para ' . $usuario->email
+        ];
+    }
+
+    /**
+     * Reenvia email de verificação para usuário não autenticado (via email público)
+     * 
+     * @param string $email Email do usuário
+     * @return array
+     * @throws \Exception
+     */
+    public function reenviarEmailVerificacaoPublico(string $email): array
+    {
+        $usuario = Usuario::where('email', $email)->first();
+
+        if (!$usuario) {
+            throw new \Exception('Usuário não encontrado', 404);
+        }
 
         // Verifica se o email já foi verificado
         if ($usuario->hasVerifiedEmail()) {
