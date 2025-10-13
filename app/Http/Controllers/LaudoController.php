@@ -6,6 +6,7 @@ use App\DTOs\LaudoDTO;
 use App\Services\LaudoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
@@ -17,13 +18,24 @@ class LaudoController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        Log::info('LaudoController::index - Listagem de laudos solicitada', [
+            'filters' => $request->only(['titulo', 'nome_arquivo', 'busca', 'data_inicio', 'data_fim']),
+            'per_page' => $request->get('per_page', 15)
+        ]);
+
         try {
             $usuario = JWTAuth::parseToken()->authenticate();
             $perPage = $request->get('per_page', 15);
-            $filtros = $request->only(['usuario_id', 'titulo', 'nome_arquivo', 'busca', 'data_inicio', 'data_fim']);
+            $filtros = $request->only(['titulo', 'nome_arquivo', 'busca', 'data_inicio', 'data_fim']);
 
             // Qualquer usuário autenticado pode ver todos os laudos
-            $laudos = $this->laudoService->listar($perPage, $filtros, $usuario->id);
+            $laudos = $this->laudoService->listar($perPage, $filtros);
+
+            Log::info('LaudoController::index - Laudos listados com sucesso', [
+                'user_id' => $usuario->id,
+                'total_found' => $laudos->total(),
+                'current_page' => $laudos->currentPage()
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -31,19 +43,34 @@ class LaudoController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            Log::error('LaudoController::index - Erro ao listar laudos', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
-            ], $e->getCode() ?: 500);
+            ], 500);
         }
     }
 
     public function show(string $id): JsonResponse
     {
+        Log::info('LaudoController::show - Visualização de laudo solicitada', [
+            'laudo_id' => $id
+        ]);
+
         try {
             $usuario = JWTAuth::parseToken()->authenticate();
             // Qualquer usuário autenticado pode ver qualquer laudo
-            $laudo = $this->laudoService->buscarPorId($id, $usuario->id);
+            $laudo = $this->laudoService->buscarPorId($id);
+
+            Log::info('LaudoController::show - Laudo visualizado com sucesso', [
+                'laudo_id' => $id,
+                'user_id' => $usuario->id,
+                'laudo_title' => $laudo->titulo
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -51,23 +78,32 @@ class LaudoController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            Log::error('LaudoController::show - Erro ao visualizar laudo', [
+                'laudo_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
-            ], $e->getCode() ?: 500);
+            ], 500);
         }
     }
 
     public function store(Request $request): JsonResponse
     {
+        Log::info('LaudoController::store - Criação de laudo solicitada', [
+            'titulo' => $request->input('titulo'),
+            'has_file' => $request->hasFile('arquivo')
+        ]);
+
         try {
             $validator = Validator::make($request->all(), [
-                'usuario_id' => 'nullable|exists:usuarios,id', // ID do usuário criador (opcional)
                 'titulo' => 'required|string|max:255',
                 'descricao' => 'nullable|string',
                 'arquivo' => 'required|file|mimes:pdf|max:10240', // 10MB max
             ], [
-                'usuario_id.exists' => 'Usuário criador não encontrado',
                 'titulo.required' => 'Título é obrigatório',
                 'titulo.max' => 'Título deve ter no máximo 255 caracteres',
                 'arquivo.required' => 'Arquivo PDF é obrigatório',
@@ -77,6 +113,11 @@ class LaudoController extends Controller
             ]);
 
             if ($validator->fails()) {
+                Log::warning('LaudoController::store - Dados de validação inválidos', [
+                    'titulo' => $request->input('titulo'),
+                    'errors' => $validator->errors()
+                ]);
+
                 return response()->json([
                     'success' => false,
                     'message' => 'Dados inválidos',
@@ -85,22 +126,15 @@ class LaudoController extends Controller
             }
 
             $usuario = JWTAuth::parseToken()->authenticate();
-            
-            // Se não é admin e está tentando criar como outro usuário
-            if (!$usuario->isAdmin() && $request->usuario_id && $request->usuario_id != $usuario->id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Você só pode criar laudos em seu próprio nome'
-                ], 403);
-            }
-
-            // Se não foi especificado usuário criador, usa o usuário logado como criador
-            if (!$request->usuario_id) {
-                $request->merge(['usuario_id' => $usuario->id]);
-            }
 
             $laudoDTO = LaudoDTO::fromRequest($request->all());
             $laudo = $this->laudoService->criar($laudoDTO);
+
+            Log::info('LaudoController::store - Laudo criado com sucesso', [
+                'laudo_id' => $laudo->id,
+                'titulo' => $laudo->titulo,
+                'created_by' => $usuario->id
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -109,18 +143,29 @@ class LaudoController extends Controller
             ], 201);
 
         } catch (\Exception $e) {
+            Log::error('LaudoController::store - Erro ao criar laudo', [
+                'titulo' => $request->input('titulo'),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
-            ], $e->getCode() ?: 500);
+            ], 500);
         }
     }
 
     public function update(Request $request, string $id): JsonResponse
     {
+        Log::info('LaudoController::update - Atualização de laudo solicitada', [
+            'laudo_id' => $id,
+            'titulo' => $request->input('titulo'),
+            'has_file' => $request->hasFile('arquivo')
+        ]);
+
         try {
             $rules = [
-                'usuario_id' => 'nullable|exists:usuarios,id',
                 'titulo' => 'required|string|max:255',
                 'descricao' => 'nullable|string',
             ];
@@ -131,7 +176,6 @@ class LaudoController extends Controller
             }
 
             $validator = Validator::make($request->all(), $rules, [
-                'usuario_id.exists' => 'Usuário não encontrado',
                 'titulo.required' => 'Título é obrigatório',
                 'titulo.max' => 'Título deve ter no máximo 255 caracteres',
                 'arquivo.file' => 'Deve ser um arquivo válido',
@@ -140,6 +184,11 @@ class LaudoController extends Controller
             ]);
 
             if ($validator->fails()) {
+                Log::warning('LaudoController::update - Dados de validação inválidos', [
+                    'laudo_id' => $id,
+                    'errors' => $validator->errors()
+                ]);
+
                 return response()->json([
                     'success' => false,
                     'message' => 'Dados inválidos',
@@ -149,19 +198,17 @@ class LaudoController extends Controller
 
             $usuario = JWTAuth::parseToken()->authenticate();
             
-            // Verifica se o laudo existe e se o usuário tem permissão
-            $laudoExistente = $this->laudoService->buscarPorId($id, $usuario->id);
-            
-            // Se não é admin e está tentando alterar para outro usuário
-            if (!$usuario->isAdmin() && $request->usuario_id && $request->usuario_id != $usuario->id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Você só pode atualizar laudos próprios'
-                ], 403);
-            }
+            // Verifica se o laudo existe
+            $laudoExistente = $this->laudoService->buscarPorId($id);
 
             $laudoDTO = LaudoDTO::fromRequest($request->all());
-            $laudo = $this->laudoService->atualizar($id, $laudoDTO, $usuario->id);
+            $laudo = $this->laudoService->atualizar($id, $laudoDTO);
+
+            Log::info('LaudoController::update - Laudo atualizado com sucesso', [
+                'laudo_id' => $id,
+                'titulo' => $laudo->titulo,
+                'updated_by' => $usuario->id
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -170,6 +217,12 @@ class LaudoController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            Log::error('LaudoController::update - Erro ao atualizar laudo', [
+                'laudo_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             // Se for erro de banco de dados, usa status code 500
             $statusCode = 500;
             if ($e->getCode() && $e->getCode() >= 400 && $e->getCode() < 600) {
@@ -185,9 +238,18 @@ class LaudoController extends Controller
 
     public function destroy(string $id): JsonResponse
     {
+        Log::info('LaudoController::destroy - Remoção de laudo solicitada', [
+            'laudo_id' => $id
+        ]);
+
         try {
             $usuario = JWTAuth::parseToken()->authenticate();
-            $this->laudoService->deletar($id, $usuario->id);
+            $this->laudoService->deletar($id);
+
+            Log::info('LaudoController::destroy - Laudo removido com sucesso', [
+                'laudo_id' => $id,
+                'deleted_by' => $usuario->id
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -195,18 +257,33 @@ class LaudoController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            Log::error('LaudoController::destroy - Erro ao remover laudo', [
+                'laudo_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
-            ], $e->getCode() ?: 500);
+            ], 500);
         }
     }
 
     public function consultarPublico(string $id): JsonResponse
     {
+        Log::info('LaudoController::consultarPublico - Consulta pública de laudo solicitada', [
+            'laudo_id' => $id
+        ]);
+
         try {
             $laudo = $this->laudoService->buscarPorId($id);
             
+            Log::info('LaudoController::consultarPublico - Consulta pública realizada com sucesso', [
+                'laudo_id' => $id,
+                'titulo' => $laudo->titulo
+            ]);
+
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -220,19 +297,35 @@ class LaudoController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            Log::error('LaudoController::consultarPublico - Erro na consulta pública', [
+                'laudo_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
-            ], $e->getCode() ?: 500);
+            ], 500);
         }
     }
 
     public function download(string $id): JsonResponse
     {
+        Log::info('LaudoController::download - Download de laudo solicitado', [
+            'laudo_id' => $id
+        ]);
+
         try {
             $usuario = JWTAuth::parseToken()->authenticate();
             // Qualquer usuário autenticado pode fazer download de qualquer laudo
-            $downloadInfo = $this->laudoService->downloadLaudo($id, $usuario->id);
+            $downloadInfo = $this->laudoService->downloadLaudo($id);
+
+            Log::info('LaudoController::download - Download realizado com sucesso', [
+                'laudo_id' => $id,
+                'user_id' => $usuario->id,
+                'filename' => $downloadInfo['nome_arquivo'] ?? null
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -240,40 +333,39 @@ class LaudoController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            Log::error('LaudoController::download - Erro ao realizar download', [
+                'laudo_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
-            ], $e->getCode() ?: 500);
+            ], 500);
         }
     }
 
     public function meusLaudos(Request $request): JsonResponse
     {
-        try {
-            $usuario = JWTAuth::parseToken()->authenticate();
-            $perPage = $request->get('per_page', 15);
-            $filtros = $request->only(['titulo', 'data_inicio', 'data_fim']);
-            
-            // Força o filtro pelo usuário atual
-            $filtros['usuario_id'] = $usuario->id;
+        // DEPRECATED: Este endpoint retorna todos os laudos já que laudos não são mais associados a usuários específicos
+        Log::info('LaudoController::meusLaudos - DEPRECATED - Redirecionando para listagem geral', [
+            'filters' => $request->only(['titulo', 'data_inicio', 'data_fim']),
+            'per_page' => $request->get('per_page', 15)
+        ]);
 
-            $laudos = $this->laudoService->listar($perPage, $filtros, $usuario->id);
-
-            return response()->json([
-                'success' => true,
-                'data' => $laudos
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], $e->getCode() ?: 500);
-        }
+        // Redireciona para o método index (listagem geral)
+        return $this->index($request);
     }
 
     public function buscar(Request $request): JsonResponse
     {
+        Log::info('LaudoController::buscar - Busca de laudos solicitada', [
+            'search_term' => $request->get('busca'),
+            'filters' => $request->only(['data_inicio', 'data_fim']),
+            'per_page' => $request->get('per_page', 15)
+        ]);
+
         try {
             $usuario = JWTAuth::parseToken()->authenticate();
             $perPage = $request->get('per_page', 15);
@@ -286,6 +378,11 @@ class LaudoController extends Controller
             ]);
 
             if ($validator->fails()) {
+                Log::warning('LaudoController::buscar - Dados de validação inválidos', [
+                    'search_term' => $request->get('busca'),
+                    'errors' => $validator->errors()
+                ]);
+
                 return response()->json([
                     'success' => false,
                     'message' => 'Dados inválidos',
@@ -297,11 +394,18 @@ class LaudoController extends Controller
                 'busca' => $request->get('busca'),
             ];
 
-            // Adicionar filtros opcionais
-            $filtrosOpcionais = $request->only(['usuario_id', 'data_inicio', 'data_fim']);
+            // Adicionar filtros opcionais (removido usuario_id)
+            $filtrosOpcionais = $request->only(['data_inicio', 'data_fim']);
             $filtros = array_merge($filtros, array_filter($filtrosOpcionais));
 
-            $laudos = $this->laudoService->listar($perPage, $filtros, $usuario->id);
+            $laudos = $this->laudoService->listar($perPage, $filtros);
+
+            Log::info('LaudoController::buscar - Busca realizada com sucesso', [
+                'search_term' => $request->get('busca'),
+                'user_id' => $usuario->id,
+                'total_found' => $laudos->total(),
+                'current_page' => $laudos->currentPage()
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -313,10 +417,16 @@ class LaudoController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            Log::error('LaudoController::buscar - Erro durante busca', [
+                'search_term' => $request->get('busca'),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
-            ], $e->getCode() ?: 500);
+            ], 500);
         }
     }
 }

@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('laudos', function (Blueprint $table) {
-            $table->id()->ulid();
-            $table->foreignId('usuario_id')->constrained('usuarios')->onDelete('set null')->nullable();
+            $table->ulid('id')->primary();
+            // $table->foreignId('usuario_id')->constrained('usuarios')->onDelete('set null')->nullable();
             $table->string('titulo');
             $table->text('descricao')->nullable();
             $table->string('url_arquivo');

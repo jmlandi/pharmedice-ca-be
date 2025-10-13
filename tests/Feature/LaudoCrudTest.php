@@ -45,7 +45,8 @@ class LaudoCrudTest extends TestCase
             'aceite_comunicacoes_email' => true,
             'aceite_comunicacoes_sms' => false,
             'aceite_comunicacoes_whatsapp' => false,
-            'ativo' => true
+            'ativo' => true,
+            'email_verified_at' => now()
         ]);
 
         $this->cliente = Usuario::create([
@@ -61,7 +62,8 @@ class LaudoCrudTest extends TestCase
             'aceite_comunicacoes_email' => true,
             'aceite_comunicacoes_sms' => true,
             'aceite_comunicacoes_whatsapp' => true,
-            'ativo' => true
+            'ativo' => true,
+            'email_verified_at' => now()
         ]);
 
         $this->adminToken = JWTAuth::fromUser($this->admin);
@@ -95,7 +97,6 @@ class LaudoCrudTest extends TestCase
                         'titulo',
                         'descricao',
                         'url_arquivo',
-                        'usuario_id',
                         'ativo',
                         'created_at'
                     ]
@@ -105,7 +106,6 @@ class LaudoCrudTest extends TestCase
         $this->assertDatabaseHas('laudos', [
             'titulo' => 'Exame de Sangue - João Silva',
             'descricao' => 'Resultado do exame de sangue completo',
-            'usuario_id' => $this->admin->id,
             'ativo' => true
         ]);
 
@@ -169,7 +169,6 @@ class LaudoCrudTest extends TestCase
     {
         // Arrange: Criar alguns laudos
         $laudo1 = Laudo::create([
-            'usuario_id' => $this->admin->id,
             'titulo' => 'Exame Cardiológico',
             'descricao' => 'Resultado do eletrocardiograma',
             'url_arquivo' => 'laudos/2024/10/exame1.pdf',
@@ -177,7 +176,6 @@ class LaudoCrudTest extends TestCase
         ]);
 
         $laudo2 = Laudo::create([
-            'usuario_id' => $this->admin->id,
             'titulo' => 'Raio-X Tórax',
             'descricao' => 'Radiografia do tórax',
             'url_arquivo' => 'laudos/2024/10/exame2.pdf',
@@ -226,7 +224,6 @@ class LaudoCrudTest extends TestCase
     {
         // Arrange: Criar laudo
         $laudo = Laudo::create([
-            'usuario_id' => $this->admin->id,
             'titulo' => 'Exame Neurológico',
             'descricao' => 'Ressonância magnética do crânio',
             'url_arquivo' => 'laudos/2024/10/neuro.pdf',
@@ -255,7 +252,6 @@ class LaudoCrudTest extends TestCase
     {
         // Arrange: Criar laudo
         $laudo = Laudo::create([
-            'usuario_id' => $this->admin->id,
             'titulo' => 'Título Original',
             'descricao' => 'Descrição Original',
             'url_arquivo' => 'laudos/2024/10/original.pdf',
@@ -294,7 +290,6 @@ class LaudoCrudTest extends TestCase
     {
         // Arrange: Criar laudo
         $laudo = Laudo::create([
-            'usuario_id' => $this->admin->id,
             'titulo' => 'Laudo Protegido',
             'url_arquivo' => 'laudos/2024/10/protegido.pdf',
             'ativo' => true
@@ -316,7 +311,6 @@ class LaudoCrudTest extends TestCase
     {
         // Arrange: Criar laudo
         $laudo = Laudo::create([
-            'usuario_id' => $this->admin->id,
             'titulo' => 'Laudo a ser removido',
             'url_arquivo' => 'laudos/2024/10/remover.pdf',
             'ativo' => true
@@ -346,7 +340,6 @@ class LaudoCrudTest extends TestCase
     {
         // Arrange: Criar laudo e simular arquivo no S3
         $laudo = Laudo::create([
-            'usuario_id' => $this->admin->id,
             'titulo' => 'Laudo para Download',
             'descricao' => 'Teste de download',
             'url_arquivo' => 'laudos/2024/10/download-test.pdf',
@@ -378,7 +371,6 @@ class LaudoCrudTest extends TestCase
     {
         // Arrange: Criar laudo público
         $laudo = Laudo::create([
-            'usuario_id' => $this->admin->id,
             'titulo' => 'Laudo Público',
             'descricao' => 'Este laudo pode ser consultado publicamente',
             'url_arquivo' => 'laudos/2024/10/publico.pdf',
@@ -405,7 +397,6 @@ class LaudoCrudTest extends TestCase
     {
         // Arrange: Criar laudos com diferentes títulos
         $laudo1 = Laudo::create([
-            'usuario_id' => $this->admin->id,
             'titulo' => 'Exame de Sangue Completo',
             'descricao' => 'Hemograma completo',
             'url_arquivo' => 'laudos/2024/10/sangue.pdf',
@@ -413,7 +404,6 @@ class LaudoCrudTest extends TestCase
         ]);
 
         $laudo2 = Laudo::create([
-            'usuario_id' => $this->admin->id,
             'titulo' => 'Raio-X do Joelho',
             'descricao' => 'Radiografia articular',
             'url_arquivo' => 'laudos/2024/10/joelho.pdf',

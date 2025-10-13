@@ -14,6 +14,7 @@ class SignupDTO
         public readonly string $telefone,
         public readonly string $numero_documento,
         public readonly string $data_nascimento,
+        public readonly string $tipo_usuario = 'usuario',
         public readonly bool $aceite_comunicacoes_email = false,
         public readonly bool $aceite_comunicacoes_sms = false,
         public readonly bool $aceite_comunicacoes_whatsapp = false,
@@ -39,6 +40,7 @@ class SignupDTO
             telefone: $dados_requisicao['telefone'],
             numero_documento: preg_replace('/\D/', '', $dados_requisicao['numero_documento']), // Remove formatação
             data_nascimento: $dados_requisicao['data_nascimento'],
+            tipo_usuario: $dados_requisicao['tipo_usuario'] ?? 'usuario',
             aceite_comunicacoes_email: $dados_requisicao['aceite_comunicacoes_email'] ?? false,
             aceite_comunicacoes_sms: $dados_requisicao['aceite_comunicacoes_sms'] ?? false,
             aceite_comunicacoes_whatsapp: $dados_requisicao['aceite_comunicacoes_whatsapp'] ?? false,
@@ -63,7 +65,7 @@ class SignupDTO
             'telefone' => $this->telefone,
             'numero_documento' => $this->numero_documento,
             'data_nascimento' => $this->data_nascimento,
-            'tipo_usuario' => 'usuario', // Novos usuários sempre são do tipo 'usuario'
+            'tipo_usuario' => $this->tipo_usuario,
             'aceite_comunicacoes_email' => $this->aceite_comunicacoes_email,
             'aceite_comunicacoes_sms' => $this->aceite_comunicacoes_sms,
             'aceite_comunicacoes_whatsapp' => $this->aceite_comunicacoes_whatsapp,

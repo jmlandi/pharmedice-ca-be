@@ -11,14 +11,14 @@ use Illuminate\Support\Str;
 
 class LaudoService
 {
-    public function listar(int $perPage = 15, array $filtros = [], ?string $usuarioId = null): LengthAwarePaginator
+    public function listar(int $perPage = 15, array $filtros = []): LengthAwarePaginator
     {
-        $query = Laudo::query()->ativo()->with('usuario');
+        $query = Laudo::query()->ativo();
 
-        // Aplicar filtros
-        if (!empty($filtros['usuario_id'])) {
-            $query->doUsuario($filtros['usuario_id']);
-        }
+        // Filtro removido - laudos não são mais associados a usuários
+        // if (!empty($filtros['usuario_id'])) {
+        //     $query->doUsuario($filtros['usuario_id']);
+        // }
 
         if (!empty($filtros['titulo'])) {
             $query->where('titulo', 'like', '%' . $filtros['titulo'] . '%');
@@ -48,9 +48,9 @@ class LaudoService
         return $query->orderBy('created_at', 'desc')->paginate($perPage);
     }
 
-    public function buscarPorId(string $id, ?string $usuarioId = null): Laudo
+    public function buscarPorId(string $id): Laudo
     {
-        $query = Laudo::query()->ativo()->with('usuario');
+        $query = Laudo::query()->ativo();
         
         // Qualquer usuário autenticado pode ver qualquer laudo
         $laudo = $query->find($id);
@@ -74,9 +74,9 @@ class LaudoService
         return Laudo::create($dados);
     }
 
-    public function atualizar(string $id, LaudoDTO $laudoDTO, ?string $usuarioId = null): Laudo
+    public function atualizar(string $id, LaudoDTO $laudoDTO): Laudo
     {
-        $laudo = $this->buscarPorId($id, $usuarioId);
+        $laudo = $this->buscarPorId($id);
         $dados = $laudoDTO->toArray();
 
         // Se tem novo arquivo, faz upload e remove o antigo
@@ -98,9 +98,9 @@ class LaudoService
         return $laudo->refresh();
     }
 
-    public function deletar(string $id, ?string $usuarioId = null): bool
+    public function deletar(string $id): bool
     {
-        $laudo = $this->buscarPorId($id, $usuarioId);
+        $laudo = $this->buscarPorId($id);
         
         // Remove arquivo do S3
         if ($laudo->url_arquivo) {
@@ -111,9 +111,9 @@ class LaudoService
         return $laudo->update(['ativo' => false]);
     }
 
-    public function downloadLaudo(string $id, ?string $usuarioId = null): array
+    public function downloadLaudo(string $id): array
     {
-        $laudo = $this->buscarPorId($id, $usuarioId);
+        $laudo = $this->buscarPorId($id);
         
         if (!$laudo->url_arquivo) {
             throw new \Exception('Arquivo não encontrado', 404);
@@ -184,13 +184,5 @@ class LaudoService
         }
     }
 
-    private function isAdmin(?string $usuarioId): bool
-    {
-        if (!$usuarioId) {
-            return false;
-        }
-        
-        $usuario = Usuario::find($usuarioId);
-        return $usuario && $usuario->isAdmin();
-    }
+    // Método removido - não é mais necessário verificar permissões baseadas em ownership
 }

@@ -39,7 +39,8 @@ class UsuarioCrudTest extends TestCase
             'aceite_comunicacoes_email' => true,
             'aceite_comunicacoes_sms' => false,
             'aceite_comunicacoes_whatsapp' => false,
-            'ativo' => true
+            'ativo' => true,
+            'email_verified_at' => now()
         ]);
 
         $this->cliente = Usuario::create([
@@ -55,7 +56,8 @@ class UsuarioCrudTest extends TestCase
             'aceite_comunicacoes_email' => true,
             'aceite_comunicacoes_sms' => true,
             'aceite_comunicacoes_whatsapp' => true,
-            'ativo' => true
+            'ativo' => true,
+            'email_verified_at' => now()
         ]);
 
         $this->adminToken = JWTAuth::fromUser($this->admin);
@@ -348,7 +350,7 @@ class UsuarioCrudTest extends TestCase
         // Verificar se a nova senha funciona
         $loginResponse = $this->postJson('/api/auth/login', [
             'email' => 'cliente@test.com',
-            'password' => 'novasenha456'
+            'senha' => 'novasenha456'
         ]);
 
         $loginResponse->assertStatus(200);

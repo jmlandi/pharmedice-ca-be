@@ -12,6 +12,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Habilitar CORS para todas as rotas API
+        $middleware->api(prepend: [
+            \Illuminate\Http\Middleware\HandleCors::class,
+        ]);
+        
         $middleware->alias([
             'jwt.auth' => \App\Http\Middleware\JwtMiddleware::class,
             'admin' => \App\Http\Middleware\AdminMiddleware::class,

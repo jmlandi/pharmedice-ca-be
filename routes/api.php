@@ -5,16 +5,27 @@ use App\Http\Controllers\LaudoController;
 use App\Http\Controllers\UsuarioController;
 use Illuminate\Support\Facades\Route;
 
+// Endpoint para testar CORS
+Route::get('test-cors', function () {
+    return response()->json([
+        'message' => 'CORS está funcionando!',
+        'timestamp' => now(),
+        'origin' => request()->header('Origin')
+    ]);
+});
+
 // Rotas públicas (sem autenticação)
 Route::prefix('auth')->group(function () {
     Route::post('login', [AuthController::class, 'login']);
-    Route::post('registrar', [AuthController::class, 'registrar']);
+    Route::post('registrar-usuario', [AuthController::class, 'registrarUsuario']);
+    Route::post('registrar-admin', [AuthController::class, 'registrarAdmin']);
+    Route::post('reenviar-verificacao-email-publico', [AuthController::class, 'reenviarVerificacaoEmailPublico']);
 });
 
-// Rota de verificação de email - precisa de auth e signed
+// Rota de verificação de email - pública com signed URL
 Route::get('auth/verificar-email/{id}/{hash}', [AuthController::class, 'verificarEmail'])
     ->name('verification.verify')
-    ->middleware(['jwt.auth', 'signed']);
+    ->middleware(['signed']);
 
 // Rota pública para consulta de laudos
 Route::get('laudos/consultar/{id}', [LaudoController::class, 'consultarPublico']);
