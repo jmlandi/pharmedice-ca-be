@@ -15,7 +15,9 @@ return [
     |
     */
 
-    'paths' => ['api/*', 'sanctum/csrf-cookie'],
+    // CORS COMPLETAMENTE DESABILITADO - Controlado pelo Nginx
+    // Não adicionar nenhum header CORS pelo Laravel
+    'paths' => [],  // Desabilita CORS para todas as rotas
 
     'allowed_methods' => ['*'],
 
