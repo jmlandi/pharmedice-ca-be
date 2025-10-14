@@ -29,10 +29,11 @@ class LaudoService
             $query->where('url_arquivo', 'like', '%' . $filtros['nome_arquivo'] . '%');
         }
 
-        // Filtro geral que busca em título e nome do arquivo
+        // Filtro geral que busca em título, descrição e nome do arquivo
         if (!empty($filtros['busca'])) {
             $query->where(function($q) use ($filtros) {
                 $q->where('titulo', 'like', '%' . $filtros['busca'] . '%')
+                  ->orWhere('descricao', 'like', '%' . $filtros['busca'] . '%')
                   ->orWhere('url_arquivo', 'like', '%' . $filtros['busca'] . '%');
             });
         }
