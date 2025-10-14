@@ -429,19 +429,31 @@ php artisan event:cache
 
 ### 5.4 Configurar Permissões
 
+**⚠️ CRÍTICO**: Este é o passo mais importante para evitar erros 404/403!
+
 ```bash
-# Dar ownership para nginx
-sudo chown -R nginx:nginx /home/ec2-user/pharmedice-ca-be
+# 1️⃣ PRIMEIRO: Dar permissão de execução no diretório home do ec2-user
+#    Isso permite que o nginx "atravesse" o caminho até a aplicação
+sudo chmod 755 /home/ec2-user
 
-# Permissões especiais para storage e bootstrap/cache
-sudo chmod -R 775 /home/ec2-user/pharmedice-ca-be/storage
-sudo chmod -R 775 /home/ec2-user/pharmedice-ca-be/bootstrap/cache
-
-# Se você quiser fazer deploy via git como ec2-user:
+# 2️⃣ Configurar ownership (ec2-user é dono, nginx é grupo)
+#    Permite que ec2-user faça deploy e nginx leia os arquivos
 sudo chown -R ec2-user:nginx /home/ec2-user/pharmedice-ca-be
+
+# 3️⃣ Permissões nos arquivos da aplicação
+sudo chmod -R 755 /home/ec2-user/pharmedice-ca-be
 sudo chmod -R 775 /home/ec2-user/pharmedice-ca-be/storage
 sudo chmod -R 775 /home/ec2-user/pharmedice-ca-be/bootstrap/cache
+
+# 4️⃣ Verificar se as permissões estão corretas
+sudo -u nginx test -r /home/ec2-user/pharmedice-ca-be/public/index.php && echo "✅ Nginx pode ler os arquivos" || echo "❌ Ainda há problemas de permissão"
 ```
+
+**Por que isso é necessário?**
+- O diretório `/home/ec2-user/` por padrão tem permissão `700` (apenas o dono pode acessar)
+- O Nginx roda como usuário `nginx` e precisa atravessar este diretório
+- `chmod 755 /home/ec2-user` dá permissão de leitura e execução para outros usuários
+- Sem isso, você verá erros como `Permission denied` nos logs do Nginx
 
 ### 5.5 Configurar SELinux (se ativo)
 
@@ -670,10 +682,11 @@ curl https://api.seudominio.com/health
 - [ ] Domínio apontando para EC2
 - [ ] Aplicação deployada
 - [ ] Migrations executadas
-- [ ] Permissões corretas
+- [ ] **⚠️ Permissões corretas (incluindo `chmod 755 /home/ec2-user`)**
 - [ ] .env configurado para produção
 - [ ] APP_DEBUG=false
-- [ ] Logs monitorados
+- [ ] Teste: `sudo -u nginx test -r /home/ec2-user/pharmedice-ca-be/public/index.php` retorna sucesso
+- [ ] Logs monitorados (sem erros de Permission denied)
 - [ ] Backups configurados
 - [ ] Queue workers rodando (se necessário)
 - [ ] Health check funcionando
@@ -707,6 +720,36 @@ php artisan optimize
 
 ## 🆘 Problemas Comuns
 
+### 🔴 Permission denied (13) / "Primary script unknown"
+
+**Sintoma**: Nos logs do Nginx você vê:
+```
+realpath() "/home/ec2-user/pharmedice-ca-be/public" failed (13: Permission denied)
+FastCGI sent in stderr: "Primary script unknown"
+```
+
+**Causa**: O Nginx não consegue acessar o diretório `/home/ec2-user/`
+
+**Solução**:
+```bash
+# 1. Dar permissão no diretório home
+sudo chmod 755 /home/ec2-user
+
+# 2. Ajustar ownership
+sudo chown -R ec2-user:nginx /home/ec2-user/pharmedice-ca-be
+
+# 3. Ajustar permissões
+sudo chmod -R 755 /home/ec2-user/pharmedice-ca-be
+sudo chmod -R 775 /home/ec2-user/pharmedice-ca-be/storage
+sudo chmod -R 775 /home/ec2-user/pharmedice-ca-be/bootstrap/cache
+
+# 4. Reiniciar serviços
+sudo systemctl restart php-fpm nginx
+
+# 5. Testar
+sudo -u nginx test -r /home/ec2-user/pharmedice-ca-be/public/index.php && echo "✅ OK" || echo "❌ Ainda com problema"
+```
+
 ### API retorna 502 Bad Gateway
 ```bash
 # Verificar se PHP-FPM está rodando
@@ -721,7 +764,7 @@ sudo tail -f /var/log/nginx/pharmedice-error.log
 ```bash
 # Verificar permissões
 ls -la /home/ec2-user/pharmedice-ca-be/public
-sudo chown -R nginx:nginx /home/ec2-user/pharmedice-ca-be
+sudo chown -R ec2-user:nginx /home/ec2-user/pharmedice-ca-be
 ```
 
 ### API lenta
