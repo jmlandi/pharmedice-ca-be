@@ -1,0 +1,126 @@
+PROMPT: IMPLEMENTAÇÃO DE AUTENTICAÇÃO GOOGLE OAUTH NO FRONTEND
+================================================================
+
+CONTEXTO:
+Backend Laravel com Google OAuth já implementado. A autenticação redireciona 
+automaticamente para o frontend com token JWT nos query params.
+
+ENDPOINTS DISPONÍVEIS:
+- Iniciar OAuth: GET /api/auth/google
+- Callback automático: Redireciona para frontend com token
+
+REQUISITOS DE IMPLEMENTAÇÃO:
+
+1. PÁGINA DE LOGIN (/login ou equivalente)
+------------------------------------------
+Botão "Entrar com Google" deve redirecionar para:
+
+window.location.href = `${API_URL}/auth/google`
+
+IMPORTANTE: A rota já tem prefixo /api automático no Laravel.
+Se API_URL = http://localhost:8000, a URL final será: http://localhost:8000/api/auth/google
+
+
+2. PÁGINA ADMIN (/admin/painel)
+--------------------------------
+Extrair token do URL quando usuário é redirecionado após autenticação:
+
+// Verificar query params: ?token=xxx&usuario=xxx&expires_in=xxx
+// Armazenar token em localStorage/cookie
+// Remover params da URL
+// Redirecionar ou carregar dashboard
+
+
+3. PÁGINA CLIENTE (/cliente/painel)
+------------------------------------
+Mesma lógica da página admin:
+
+// Extrair token dos query params
+// Armazenar credenciais
+// Limpar URL
+// Carregar interface do cliente
+
+
+4. PÁGINA DE ERRO (/login com erro)
+------------------------------------
+Tratar callback com erro:
+
+// Verificar query param: ?error=xxx
+// Exibir mensagem de erro apropriada
+// Permitir nova tentativa
+
+
+FLUXO COMPLETO:
+---------------
+1. Usuário clica "Entrar com Google" → Redirecionado para /api/auth/google
+2. Google autentica → Redireciona para backend callback
+3. Backend processa → Redireciona para frontend:
+   - Admin: /admin/painel?token=xxx&usuario=xxx&expires_in=xxx
+   - Cliente: /cliente/painel?token=xxx&usuario=xxx&expires_in=xxx
+   - Erro: /login?error=mensagem
+4. Frontend extrai dados → Armazena token → Remove params da URL
+
+
+VARIÁVEIS DE AMBIENTE NECESSÁRIAS:
+-----------------------------------
+NEXT_PUBLIC_API_URL=http://localhost:8000
+
+
+TRATAMENTO DE ERROS:
+--------------------
+- Token inválido ou expirado
+- Falha na comunicação com Google
+- Usuário cancela autenticação
+- Email já cadastrado com senha
+
+
+CÓDIGO TOTAL ESTIMADO:
+-----------------------
+~20-30 linhas para implementação completa (botão + extração de token + tratamento de erro)
+
+
+EXEMPLO DE IMPLEMENTAÇÃO:
+--------------------------
+
+// 1. Botão de Login (qualquer framework)
+<button onClick={() => window.location.href = 'http://localhost:8000/auth/google'}>
+  Entrar com Google
+</button>
+
+// OBS: A URL final será http://localhost:8000/api/auth/google (prefixo /api é automático)
+
+
+// 2. Extração de Token (Next.js/React)
+useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('token');
+  const usuario = params.get('usuario');
+  const error = params.get('error');
+
+  if (error) {
+    // Mostrar erro e redirecionar para login
+    alert(error);
+    window.location.href = '/login';
+    return;
+  }
+
+  if (token && usuario) {
+    // Armazenar credenciais
+    localStorage.setItem('token', token);
+    localStorage.setItem('usuario', usuario);
+    
+    // Limpar URL
+    window.history.replaceState({}, '', window.location.pathname);
+    
+    // Carregar dashboard
+    // (código específico do seu app)
+  }
+}, []);
+
+
+IMPORTANTE:
+-----------
+- Não é necessário implementar popup ou postMessage
+- O fluxo é simples: redirect → autenticação → redirect de volta
+- Backend já determina se usuário é admin ou cliente
+- Token já vem pronto nos query params

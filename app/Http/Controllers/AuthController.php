@@ -753,4 +753,93 @@ class AuthController extends Controller
             ], $e->getCode() ?: 500);
         }
     }
+
+    /**
+     * Inicia o processo de autenticação com Google OAuth
+     * Redireciona diretamente para o Google
+     * 
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function loginComGoogle()
+    {
+        Log::info('AuthController::loginComGoogle - Iniciando autenticação com Google');
+
+        try {
+            $redirectUrl = $this->authService->loginComGoogle();
+
+            Log::info('AuthController::loginComGoogle - Redirecionando para Google OAuth', [
+                'redirect_url' => $redirectUrl
+            ]);
+
+            // Redireciona diretamente para o Google
+            return redirect()->away($redirectUrl);
+
+        } catch (\Exception $e) {
+            Log::error('AuthController::loginComGoogle - Erro ao iniciar autenticação com Google', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            // Em caso de erro, redireciona para página de login do frontend com mensagem de erro
+            $frontendUrl = config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000'));
+            $errorMessage = urlencode($e->getMessage());
+            
+            return redirect()->away("{$frontendUrl}/login?error={$errorMessage}");
+        }
+    }
+
+    /**
+     * Processa o callback do Google OAuth e redireciona para o frontend
+     * 
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function googleCallback()
+    {
+        Log::info('AuthController::googleCallback - Processando callback do Google');
+
+        try {
+            $result = $this->authService->callbackGoogle();
+
+            Log::info('AuthController::googleCallback - Autenticação com Google realizada com sucesso', [
+                'user_id' => $result['usuario']['id'] ?? null,
+                'email' => $result['usuario']['email'] ?? null,
+                'is_admin' => $result['usuario']['is_admin'] ?? false,
+            ]);
+
+            // Monta URL do frontend baseada no tipo de usuário
+            $frontendUrl = config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000'));
+            
+            // Define o caminho baseado no tipo de usuário
+            $path = $result['usuario']['is_admin'] ? '/admin/painel' : '/cliente/painel';
+            
+            // Codifica o token e dados do usuário para passar via query string
+            $queryParams = http_build_query([
+                'token' => $result['access_token'],
+                'user' => json_encode($result['usuario']),
+                'expires_in' => $result['expires_in'],
+            ]);
+
+            $redirectUrl = $frontendUrl . $path . '?' . $queryParams;
+
+            Log::info('AuthController::googleCallback - Redirecionando para frontend', [
+                'redirect_url' => $redirectUrl,
+                'is_admin' => $result['usuario']['is_admin'],
+            ]);
+
+            // Redireciona para o frontend
+            return redirect()->away($redirectUrl);
+
+        } catch (\Exception $e) {
+            Log::error('AuthController::googleCallback - Erro no callback do Google', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            // Em caso de erro, redireciona para página de login do frontend com mensagem de erro
+            $frontendUrl = config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000'));
+            $errorMessage = urlencode($e->getMessage());
+            
+            return redirect()->away("{$frontendUrl}/login?error={$errorMessage}");
+        }
+    }
 }

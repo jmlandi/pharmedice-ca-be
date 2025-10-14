@@ -15,40 +15,41 @@ return [
     |
     */
 
-    // CORS COMPLETAMENTE DESABILITADO - Controlado pelo Nginx
-    // Não adicionar nenhum header CORS pelo Laravel
-    'paths' => [],  // Desabilita CORS para todas as rotas
+    /*
+    |--------------------------------------------------------------------------
+    | Paths
+    |--------------------------------------------------------------------------
+    |
+    | Paths that should have CORS enabled.
+    | In local environment, enable CORS for all API routes.
+    | In production, CORS is handled by Nginx (paths = []).
+    |
+    */
+    'paths' => env('APP_ENV') === 'local' ? ['api/*', 'sanctum/csrf-cookie'] : [],
 
     'allowed_methods' => ['*'],
 
-    // CORS está sendo controlado pelo Nginx (ver /etc/nginx/conf.d/pharmedice-api.conf)
-    // Esta configuração está desabilitada para evitar conflitos
-    
-    'allowed_origins' => [
-        // Desenvolvimento local
-        'http://localhost:3000',
-        'http://localhost:3001',
-        'http://localhost:8080',
-        'http://127.0.0.1:3000',
-        'http://127.0.0.1:8080',
-        
+    /*
+    |--------------------------------------------------------------------------
+    | Allowed Origins
+    |--------------------------------------------------------------------------
+    |
+    | In local environment (APP_ENV=local), all origins are allowed.
+    | In production, only specific origins are allowed.
+    |
+    */
+    'allowed_origins' => env('APP_ENV') === 'local' ? ['*'] : [
         // Domínios de produção
         'https://cliente.pharmedice.com.br',
         'https://api.pharmedice.com.br',
         'https://api-pharmedice.marcoslandi.com',
     ],
 
-    'allowed_origins_patterns' => [
-        // Permite subdomínios em desenvolvimento
-        '#^http://localhost:\d+$#',
-        '#^http://127\.0\.0\.1:\d+$#',
+    'allowed_origins_patterns' => env('APP_ENV') === 'local' ? [] : [
+        // Permite subdomínios em produção
         '#^https://.*\.pharmedice\.com$#',
         '#^https://.*\.pharmedice\.com\.br$#',
         '#^https://.*\.marcoslandi\.com$#',
-        // all pharmedice.com subdomains or paths
-        
-        // Descomente para permitir todos os subdomínios em produção
-        // '#^https://.*\.meusite\.com$#',
     ],
 
     'allowed_headers' => ['*'],

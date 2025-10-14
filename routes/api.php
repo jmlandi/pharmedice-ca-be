@@ -29,6 +29,10 @@ Route::prefix('auth')->group(function () {
     // Rota de verificação de email - pública com signed URL
     Route::post('verificar-email', [AuthController::class, 'verificarEmail'])
         ->name('verification.verify');
+    
+    // Rotas de autenticação com Google
+    Route::get('google', [AuthController::class, 'loginComGoogle']);
+    Route::get('google/callback', [AuthController::class, 'googleCallback']);
 });
 
 // Rota pública para consulta de laudos
