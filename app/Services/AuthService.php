@@ -478,8 +478,10 @@ class AuthService
      */
     public function loginComGoogle(): string
     {
-        return \Laravel\Socialite\Facades\Socialite::driver('google')
-            ->stateless()
+        /** @var \Laravel\Socialite\Two\GoogleProvider $driver */
+        $driver = \Laravel\Socialite\Facades\Socialite::driver('google');
+        
+        return $driver->stateless()
             ->redirect()
             ->getTargetUrl();
     }
@@ -494,9 +496,9 @@ class AuthService
     {
         try {
             // Obtém os dados do usuário do Google
-            $googleUser = \Laravel\Socialite\Facades\Socialite::driver('google')
-                ->stateless()
-                ->user();
+            /** @var \Laravel\Socialite\Two\GoogleProvider $driver */
+            $driver = \Laravel\Socialite\Facades\Socialite::driver('google');
+            $googleUser = $driver->stateless()->user();
 
             Log::info('Callback Google recebido', [
                 'google_id' => $googleUser->getId(),
