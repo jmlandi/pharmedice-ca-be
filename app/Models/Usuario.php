@@ -85,7 +85,11 @@ class Usuario extends Authenticatable implements MustVerifyEmail, JWTSubject
     // Accessors
     public function getNomeCompletoAttribute()
     {
-        return trim($this->primeiro_nome . ' ' . $this->segundo_nome);
+        $nome = $this->primeiro_nome;
+        if ($this->segundo_nome) {
+            $nome .= ' ' . $this->segundo_nome;
+        }
+        return trim($nome);
     }
 
     public function getIsAdminAttribute()

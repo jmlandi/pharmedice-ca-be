@@ -91,7 +91,7 @@ class AuthService
             'email' => $usuario->email,
             'telefone' => $usuario->telefone,
             'numero_documento' => $usuario->numero_documento,
-            'data_nascimento' => $usuario->data_nascimento->format('Y-m-d'),
+            'data_nascimento' => $usuario->data_nascimento?->format('Y-m-d'),
             'tipo_usuario' => $usuario->tipo_usuario,
             'is_admin' => $usuario->is_admin,
             'email_verificado' => $usuario->hasVerifiedEmail(),
@@ -100,6 +100,8 @@ class AuthService
             'aceite_comunicacoes_sms' => $usuario->aceite_comunicacoes_sms,
             'aceite_comunicacoes_whatsapp' => $usuario->aceite_comunicacoes_whatsapp,
             'ativo' => $usuario->ativo,
+            'avatar' => $usuario->avatar,
+            'provider' => $usuario->provider,
         ];
     }
 
@@ -476,8 +478,10 @@ class AuthService
      */
     public function loginComGoogle(): string
     {
-        return \Laravel\Socialite\Facades\Socialite::driver('google')
-            ->stateless()
+        /** @var \Laravel\Socialite\Two\GoogleProvider $driver */
+        $driver = \Laravel\Socialite\Facades\Socialite::driver('google');
+        
+        return $driver->stateless()
             ->redirect()
             ->getTargetUrl();
     }
@@ -492,9 +496,9 @@ class AuthService
     {
         try {
             // Obtém os dados do usuário do Google
-            $googleUser = \Laravel\Socialite\Facades\Socialite::driver('google')
-                ->stateless()
-                ->user();
+            /** @var \Laravel\Socialite\Two\GoogleProvider $driver */
+            $driver = \Laravel\Socialite\Facades\Socialite::driver('google');
+            $googleUser = $driver->stateless()->user();
 
             Log::info('Callback Google recebido', [
                 'google_id' => $googleUser->getId(),
@@ -526,9 +530,21 @@ class AuthService
             // Se ainda não encontrou, cria um novo usuário
             if (!$usuario) {
                 // Extrai primeiro e último nome
-                $nameParts = explode(' ', $googleUser->getName(), 2);
-                $primeiroNome = $nameParts[0];
-                $segundoNome = $nameParts[1] ?? '';
+                $googleName = $googleUser->getName();
+                
+                // Valida se o nome existe
+                if (empty($googleName)) {
+                    throw new \Exception('Nome do usuário não fornecido pelo Google', 400);
+                }
+                
+                $nameParts = explode(' ', trim($googleName), 2);
+                $primeiroNome = trim($nameParts[0]);
+                $segundoNome = isset($nameParts[1]) && !empty(trim($nameParts[1])) ? trim($nameParts[1]) : null;
+                
+                // Garante que o primeiro nome não está vazio
+                if (empty($primeiroNome)) {
+                    throw new \Exception('Nome inválido fornecido pelo Google', 400);
+                }
 
                 // Determina o tipo de usuário baseado no domínio do email
                 $email = $googleUser->getEmail();
@@ -538,6 +554,14 @@ class AuthService
                 if (str_ends_with(strtolower($email), '@pharmedice.com.br')) {
                     $tipoUsuario = 'administrador';
                 }
+
+                Log::info('Criando novo usuário via Google OAuth', [
+                    'email' => $email,
+                    'primeiro_nome' => $primeiroNome,
+                    'segundo_nome' => $segundoNome,
+                    'google_id' => $googleUser->getId(),
+                    'tipo_usuario' => $tipoUsuario
+                ]);
 
                 $usuario = Usuario::create([
                     'primeiro_nome' => $primeiroNome,
