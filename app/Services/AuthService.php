@@ -468,4 +468,135 @@ class AuthService
             ]
         ];
     }
+
+    /**
+     * Retorna a URL de redirecionamento para autenticação com Google
+     * 
+     * @return string URL de redirecionamento
+     */
+    public function loginComGoogle(): string
+    {
+        return \Laravel\Socialite\Facades\Socialite::driver('google')
+            ->stateless()
+            ->redirect()
+            ->getTargetUrl();
+    }
+
+    /**
+     * Processa o callback do Google OAuth e autentica o usuário
+     * 
+     * @return array Dados do usuário com token JWT
+     * @throws \Exception
+     */
+    public function callbackGoogle(): array
+    {
+        try {
+            // Obtém os dados do usuário do Google
+            $googleUser = \Laravel\Socialite\Facades\Socialite::driver('google')
+                ->stateless()
+                ->user();
+
+            Log::info('Callback Google recebido', [
+                'google_id' => $googleUser->getId(),
+                'email' => $googleUser->getEmail(),
+            ]);
+
+            // Verifica se já existe um usuário com este google_id
+            $usuario = Usuario::where('google_id', $googleUser->getId())->first();
+
+            // Se não encontrou por google_id, tenta encontrar por email
+            if (!$usuario) {
+                $usuario = Usuario::where('email', $googleUser->getEmail())->first();
+                
+                // Se encontrou um usuário com o email, vincula a conta Google
+                if ($usuario) {
+                    $usuario->google_id = $googleUser->getId();
+                    $usuario->provider = 'google';
+                    $usuario->avatar = $googleUser->getAvatar();
+                    $usuario->email_verified_at = $usuario->email_verified_at ?? now();
+                    $usuario->save();
+                    
+                    Log::info('Conta Google vinculada a usuário existente', [
+                        'usuario_id' => $usuario->id,
+                        'email' => $usuario->email
+                    ]);
+                }
+            }
+
+            // Se ainda não encontrou, cria um novo usuário
+            if (!$usuario) {
+                // Extrai primeiro e último nome
+                $nameParts = explode(' ', $googleUser->getName(), 2);
+                $primeiroNome = $nameParts[0];
+                $segundoNome = $nameParts[1] ?? '';
+
+                // Determina o tipo de usuário baseado no domínio do email
+                $email = $googleUser->getEmail();
+                $tipoUsuario = 'usuario'; // Padrão para clientes
+                
+                // Se o email for @pharmedice.com.br, define como administrador
+                if (str_ends_with(strtolower($email), '@pharmedice.com.br')) {
+                    $tipoUsuario = 'administrador';
+                }
+
+                $usuario = Usuario::create([
+                    'primeiro_nome' => $primeiroNome,
+                    'segundo_nome' => $segundoNome,
+                    'apelido' => $primeiroNome,
+                    'email' => $email,
+                    'google_id' => $googleUser->getId(),
+                    'provider' => 'google',
+                    'avatar' => $googleUser->getAvatar(),
+                    'tipo_usuario' => $tipoUsuario,
+                    'email_verified_at' => now(), // Email verificado pelo Google
+                    'ativo' => true,
+                    'aceite_comunicacoes_email' => false,
+                    'aceite_comunicacoes_sms' => false,
+                    'aceite_comunicacoes_whatsapp' => false,
+                ]);
+
+                Log::info('Novo usuário criado via Google OAuth', [
+                    'usuario_id' => $usuario->id,
+                    'email' => $usuario->email,
+                    'tipo_usuario' => $tipoUsuario
+                ]);
+            }
+
+            // Verifica se o usuário está ativo
+            if (!$usuario->ativo) {
+                throw new \Exception('Usuário inativo', 401);
+            }
+
+            // Gera o token JWT
+            $token = JWTAuth::fromUser($usuario);
+
+            return [
+                'access_token' => $token,
+                'token_type' => 'bearer',
+                'expires_in' => JWTAuth::factory()->getTTL() * 60,
+                'usuario' => [
+                    'id' => $usuario->id,
+                    'primeiro_nome' => $usuario->primeiro_nome,
+                    'segundo_nome' => $usuario->segundo_nome,
+                    'email' => $usuario->email,
+                    'tipo_usuario' => $usuario->tipo_usuario,
+                    'is_admin' => $usuario->is_admin,
+                    'email_verificado' => $usuario->hasVerifiedEmail(),
+                    'avatar' => $usuario->avatar,
+                ]
+            ];
+
+        } catch (\Laravel\Socialite\Two\InvalidStateException $e) {
+            Log::error('Erro de estado inválido no callback do Google', [
+                'error' => $e->getMessage()
+            ]);
+            throw new \Exception('Erro de autenticação com Google. Por favor, tente novamente.', 400);
+        } catch (\Exception $e) {
+            Log::error('Erro no callback do Google', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
+        }
+    }
 }

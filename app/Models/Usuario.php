@@ -33,6 +33,9 @@ class Usuario extends Authenticatable implements MustVerifyEmail, JWTSubject
         'aceite_comunicacoes_whatsapp',
         'ativo',
         'email_verified_at',
+        'google_id',
+        'provider',
+        'avatar',
     ];
 
     protected $hidden = [
@@ -73,7 +76,10 @@ class Usuario extends Authenticatable implements MustVerifyEmail, JWTSubject
     // Mutators
     public function setSenhaAttribute($value)
     {
-        $this->attributes['senha'] = Hash::make($value);
+        // Apenas aplicar hash se o valor não for null
+        if ($value !== null) {
+            $this->attributes['senha'] = Hash::make($value);
+        }
     }
 
     // Accessors

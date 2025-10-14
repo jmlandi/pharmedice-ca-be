@@ -12,8 +12,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // CORS está sendo controlado pelo Nginx
-        // Não usamos HandleCors do Laravel para evitar conflitos
+        // Em ambiente local, habilita CORS do Laravel para facilitar desenvolvimento
+        // Em produção, CORS é controlado pelo Nginx
+        if (env('APP_ENV') === 'local') {
+            $middleware->api(prepend: [
+                \Illuminate\Http\Middleware\HandleCors::class,
+            ]);
+        }
         
         $middleware->alias([
             'jwt.auth' => \App\Http\Middleware\JwtMiddleware::class,
