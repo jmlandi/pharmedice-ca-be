@@ -19,21 +19,22 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*'],  // TEMPORÁRIO: permite todas as origens
+    // CORS está sendo controlado pelo Nginx (ver /etc/nginx/conf.d/pharmedice-api.conf)
+    // Esta configuração está desabilitada para evitar conflitos
     
-    // 'allowed_origins' => [
-    //     // Desenvolvimento local
-    //     'http://localhost:3000',
-    //     'http://localhost:3001',
-    //     'http://localhost:8080',
-    //     'http://127.0.0.1:3000',
-    //     'http://127.0.0.1:8080',
-    //     
-    //     // Domínios de produção
-    //     'https://cliente.pharmedice.com.br',
-    //     'https://api.pharmedice.com.br',
-    //     'https://api-pharmedice.marcoslandi.com',
-    // ],
+    'allowed_origins' => [
+        // Desenvolvimento local
+        'http://localhost:3000',
+        'http://localhost:3001',
+        'http://localhost:8080',
+        'http://127.0.0.1:3000',
+        'http://127.0.0.1:8080',
+        
+        // Domínios de produção
+        'https://cliente.pharmedice.com.br',
+        'https://api.pharmedice.com.br',
+        'https://api-pharmedice.marcoslandi.com',
+    ],
 
     'allowed_origins_patterns' => [
         // Permite subdomínios em desenvolvimento
