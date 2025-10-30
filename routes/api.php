@@ -70,6 +70,7 @@ Route::middleware(['jwt.auth'])->group(function () {
         Route::get('meus-laudos', [LaudoController::class, 'meusLaudos']);
         Route::get('buscar', [LaudoController::class, 'buscar']);
         Route::get('{id}/download', [LaudoController::class, 'download']);
+        Route::get('{id}/visualizar', [LaudoController::class, 'visualizar']);
         
         // Rotas gerais de laudos (agora todos os usuários autenticados podem acessar)
         Route::get('/', [LaudoController::class, 'index']);

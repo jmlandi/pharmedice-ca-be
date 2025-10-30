@@ -7,6 +7,7 @@ use App\Services\LaudoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
@@ -310,7 +311,7 @@ class LaudoController extends Controller
         }
     }
 
-    public function download(string $id): JsonResponse
+    public function download(string $id)
     {
         Log::info('LaudoController::download - Download de laudo solicitado', [
             'laudo_id' => $id
@@ -327,13 +328,59 @@ class LaudoController extends Controller
                 'filename' => $downloadInfo['nome_arquivo'] ?? null
             ]);
 
-            return response()->json([
-                'sucesso' => true,
-                'dados' => $downloadInfo
-            ]);
+            // Stream do arquivo direto do S3 com headers de download
+            $laudo = $this->laudoService->buscarPorId($id);
+            $fileContents = Storage::disk('s3')->get($laudo->url_arquivo);
+            
+            return response($fileContents, 200)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'attachment; filename="' . $downloadInfo['nome_arquivo_original'] . '"')
+                ->header('Content-Length', strlen($fileContents));
 
         } catch (\Exception $e) {
             Log::error('LaudoController::download - Erro ao realizar download', [
+                'laudo_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'sucesso' => false,
+                'mensagem' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function visualizar(string $id)
+    {
+        Log::info('LaudoController::visualizar - Visualização de laudo solicitada', [
+            'laudo_id' => $id
+        ]);
+
+        try {
+            $usuario = JWTAuth::parseToken()->authenticate();
+            // Qualquer usuário autenticado pode visualizar qualquer laudo
+            $laudo = $this->laudoService->buscarPorId($id);
+
+            if (!$laudo->url_arquivo || !Storage::disk('s3')->exists($laudo->url_arquivo)) {
+                throw new \Exception('Arquivo não encontrado', 404);
+            }
+
+            Log::info('LaudoController::visualizar - Visualização realizada com sucesso', [
+                'laudo_id' => $id,
+                'user_id' => $usuario->id
+            ]);
+
+            // Stream do arquivo direto do S3 com headers para visualização inline
+            $fileContents = Storage::disk('s3')->get($laudo->url_arquivo);
+            
+            return response($fileContents, 200)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'inline; filename="' . $laudo->nome_arquivo_original . '"')
+                ->header('Content-Length', strlen($fileContents));
+
+        } catch (\Exception $e) {
+            Log::error('LaudoController::visualizar - Erro ao visualizar', [
                 'laudo_id' => $id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
