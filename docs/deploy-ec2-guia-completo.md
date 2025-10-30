@@ -138,6 +138,9 @@ server {
     access_log /var/log/nginx/pharmedice-access.log;
     error_log /var/log/nginx/pharmedice-error.log;
 
+    # Upload de arquivos - máximo 10MB
+    client_max_body_size 10M;
+
     # Security headers
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
@@ -320,6 +323,9 @@ server {
     
     # HSTS
     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    
+    # Upload de arquivos - máximo 10MB
+    client_max_body_size 10M;
     
     # ... resto da configuração (igual ao passo 3.1)
 }

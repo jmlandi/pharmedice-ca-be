@@ -125,10 +125,13 @@ class LaudoService
             throw new \Exception('Arquivo não encontrado no storage', 404);
         }
 
-        // Por enquanto, gera URL direta do S3 (pode ser configurada como pública ou usar pre-signed URLs)
-        $bucketName = config('filesystems.disks.s3.bucket');
-        $region = config('filesystems.disks.s3.region');
-        $url = "https://{$bucketName}.s3.{$region}.amazonaws.com/{$laudo->url_arquivo}";
+        // Gera URL assinada temporária (válida por 1 hora) para arquivos privados
+        /** @var \Illuminate\Filesystem\AwsS3V3Adapter $disk */
+        $disk = Storage::disk('s3');
+        $url = $disk->temporaryUrl(
+            $laudo->url_arquivo,
+            now()->addHour()
+        );
 
         return [
             'url' => $url,

@@ -381,6 +381,9 @@ server {
     add_header X-Frame-Options "SAMEORIGIN";
     add_header X-Content-Type-Options "nosniff";
 
+    # File upload - maximum 10MB
+    client_max_body_size 10M;
+
     index index.php;
 
     charset utf-8;

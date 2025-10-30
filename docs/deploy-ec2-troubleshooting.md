@@ -174,6 +174,9 @@ server {
     add_header X-Frame-Options "SAMEORIGIN";
     add_header X-Content-Type-Options "nosniff";
 
+    # Upload de arquivos - máximo 10MB
+    client_max_body_size 10M;
+
     index index.php;
 
     charset utf-8;
@@ -354,6 +357,30 @@ php artisan storage:link
 
 # Verificar permissões
 chmod -R 775 storage/app/public
+```
+
+### 4.1. Erro 413 - Request Entity Too Large
+
+**Sintoma:** Erro 413 ao fazer upload de arquivos, mesmo pequenos (ex: 400KB)
+
+**Causa:** Nginx tem limite padrão de 1MB para requisições
+
+**Solução:**
+```bash
+# Editar configuração do nginx
+sudo nano /etc/nginx/conf.d/pharmedice-api.conf
+
+# Adicionar dentro do bloco server:
+client_max_body_size 10M;
+
+# Testar e recarregar
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+**Verificar se foi aplicado:**
+```bash
+sudo nginx -T | grep client_max_body_size
 ```
 
 ### 5. JWT Token inválido
