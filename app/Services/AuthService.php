@@ -505,12 +505,12 @@ class AuthService
                 'email' => $googleUser->getEmail(),
             ]);
 
-            // Verifica se já existe um usuário com este google_id
-            $usuario = Usuario::where('google_id', $googleUser->getId())->first();
+            // Verifica se já existe um usuário com este google_id (incluindo inativos)
+            $usuario = Usuario::withoutGlobalScopes()->where('google_id', $googleUser->getId())->first();
 
-            // Se não encontrou por google_id, tenta encontrar por email
+            // Se não encontrou por google_id, tenta encontrar por email (incluindo inativos)
             if (!$usuario) {
-                $usuario = Usuario::where('email', $googleUser->getEmail())->first();
+                $usuario = Usuario::withoutGlobalScopes()->where('email', $googleUser->getEmail())->first();
                 
                 // Se encontrou um usuário com o email, vincula a conta Google
                 if ($usuario) {
@@ -518,13 +518,52 @@ class AuthService
                     $usuario->provider = 'google';
                     $usuario->avatar = $googleUser->getAvatar();
                     $usuario->email_verified_at = $usuario->email_verified_at ?? now();
+                    
+                    // Se o usuário estava inativo (deletado), reativa a conta
+                    if (!$usuario->ativo) {
+                        $usuario->ativo = true;
+                        Log::info('Conta reativada via Google OAuth', [
+                            'usuario_id' => $usuario->id,
+                            'email' => $usuario->email,
+                            'google_id' => $googleUser->getId()
+                        ]);
+                    }
+                    
                     $usuario->save();
                     
                     Log::info('Conta Google vinculada a usuário existente', [
                         'usuario_id' => $usuario->id,
-                        'email' => $usuario->email
+                        'email' => $usuario->email,
+                        'foi_reativada' => !$usuario->getOriginal('ativo')
                     ]);
                 }
+            } else if ($usuario && !$usuario->ativo) {
+                // Se encontrou por google_id mas está inativo, reativa a conta e atualiza informações
+                $usuario->ativo = true;
+                $usuario->avatar = $googleUser->getAvatar();
+                $usuario->email_verified_at = $usuario->email_verified_at ?? now();
+                
+                // Atualiza nome se necessário (caso tenha mudado no Google)
+                $googleName = $googleUser->getName();
+                if (!empty($googleName)) {
+                    $nameParts = explode(' ', trim($googleName), 2);
+                    $primeiroNome = trim($nameParts[0]);
+                    $segundoNome = isset($nameParts[1]) && !empty(trim($nameParts[1])) ? trim($nameParts[1]) : null;
+                    
+                    if (!empty($primeiroNome)) {
+                        $usuario->primeiro_nome = $primeiroNome;
+                        $usuario->segundo_nome = $segundoNome;
+                    }
+                }
+                
+                $usuario->save();
+                
+                Log::info('Conta existente reativada via Google OAuth', [
+                    'usuario_id' => $usuario->id,
+                    'email' => $usuario->email,
+                    'google_id' => $googleUser->getId(),
+                    'nome_atualizado' => !empty($primeiroNome)
+                ]);
             }
 
             // Se ainda não encontrou, cria um novo usuário
@@ -584,11 +623,6 @@ class AuthService
                     'email' => $usuario->email,
                     'tipo_usuario' => $tipoUsuario
                 ]);
-            }
-
-            // Verifica se o usuário está ativo
-            if (!$usuario->ativo || empty($usuario->ativo)) {
-                throw new \Exception('Usuário inativo', 401);
             }
 
             // Gera o token JWT
