@@ -587,7 +587,7 @@ class AuthService
             }
 
             // Verifica se o usuário está ativo
-            if (!$usuario->ativo) {
+            if (!$usuario->ativo || empty($usuario->ativo)) {
                 throw new \Exception('Usuário inativo', 401);
             }
 
