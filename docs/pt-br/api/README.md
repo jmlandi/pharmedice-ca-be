@@ -33,6 +33,7 @@ Authorization: Bearer SEU_TOKEN_JWT_AQUI
 | `POST` | `/auth/logout` | Logout do usuário | ✅ |
 | `POST` | `/auth/refresh` | Renovar token JWT | ✅ |
 | `GET` | `/auth/me` | Obter dados do usuário atual | ✅ |
+| `PUT` | `/auth/perfil` | **✨ Atualizar próprio perfil** | ✅ |
 | `POST` | `/auth/reenviar-verificacao-email` | Reenviar email de verificação | ✅ |
 | `GET` | `/auth/verificar-email/{id}/{hash}` | Verificar endereço de email | ✅ |
 

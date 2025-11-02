@@ -657,4 +657,87 @@ class AuthService
             throw $e;
         }
     }
+
+    /**
+     * Atualiza o perfil do usuário autenticado
+     * 
+     * @param array $dados Dados para atualizar
+     * @return array Dados atualizados do usuário
+     * @throws \Exception
+     */
+    public function atualizarPerfil(array $dados): array
+    {
+        try {
+            $usuario = JWTAuth::parseToken()->authenticate();
+
+            if (!$usuario) {
+                throw new \Exception('Usuário não encontrado', 404);
+            }
+
+            Log::info('Atualizando perfil do usuário', [
+                'usuario_id' => $usuario->id,
+                'email' => $usuario->email,
+                'campos_alterados' => array_keys($dados)
+            ]);
+
+            // Remove campos que não devem ser alterados pelo próprio usuário
+            $camposProibidos = ['tipo_usuario', 'ativo', 'email_verified_at', 'google_id', 'provider'];
+            foreach ($camposProibidos as $campo) {
+                if (isset($dados[$campo])) {
+                    unset($dados[$campo]);
+                    Log::warning('Campo proibido removido da atualização de perfil', [
+                        'usuario_id' => $usuario->id,
+                        'campo' => $campo
+                    ]);
+                }
+            }
+
+            // Se o email está sendo alterado, marca como não verificado
+            if (isset($dados['email']) && $dados['email'] !== $usuario->email) {
+                $dados['email_verified_at'] = null;
+                Log::info('Email alterado, marcando como não verificado', [
+                    'usuario_id' => $usuario->id,
+                    'email_antigo' => $usuario->email,
+                    'email_novo' => $dados['email']
+                ]);
+            }
+
+            // Atualiza os dados
+            $usuario->update($dados);
+            $usuario->refresh();
+
+            Log::info('Perfil atualizado com sucesso', [
+                'usuario_id' => $usuario->id,
+                'email' => $usuario->email
+            ]);
+
+            return [
+                'id' => $usuario->id,
+                'primeiro_nome' => $usuario->primeiro_nome,
+                'segundo_nome' => $usuario->segundo_nome,
+                'apelido' => $usuario->apelido,
+                'email' => $usuario->email,
+                'telefone' => $usuario->telefone,
+                'numero_documento' => $usuario->numero_documento,
+                'data_nascimento' => $usuario->data_nascimento?->format('Y-m-d'),
+                'tipo_usuario' => $usuario->tipo_usuario,
+                'is_admin' => $usuario->is_admin,
+                'email_verificado' => $usuario->hasVerifiedEmail(),
+                'avatar' => $usuario->avatar,
+                'aceite_comunicacoes_email' => $usuario->aceite_comunicacoes_email,
+                'aceite_comunicacoes_sms' => $usuario->aceite_comunicacoes_sms,
+                'aceite_comunicacoes_whatsapp' => $usuario->aceite_comunicacoes_whatsapp,
+                'ativo' => $usuario->ativo,
+                'created_at' => $usuario->created_at,
+                'updated_at' => $usuario->updated_at,
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('Erro ao atualizar perfil', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
+        }
+    }
 }

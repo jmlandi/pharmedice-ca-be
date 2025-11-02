@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
 {
@@ -840,6 +841,93 @@ class AuthController extends Controller
             $errorMessage = urlencode($e->getMessage());
             
             return redirect()->away("{$frontendUrl}/login?error={$errorMessage}");
+        }
+    }
+
+    /**
+     * Atualiza o perfil do usuário autenticado
+     * 
+     * @param Request $request Dados do perfil a serem atualizados
+     * @return JsonResponse
+     */
+    public function atualizarPerfil(Request $request): JsonResponse
+    {
+        Log::info('AuthController::atualizarPerfil - Atualização de perfil solicitada');
+
+        try {
+            // Obtém o usuário autenticado para validações de uniqueness
+            $usuarioAtual = JWTAuth::parseToken()->authenticate();
+            
+            $validator = Validator::make($request->all(), [
+                'primeiro_nome' => 'sometimes|required|string|min:2|max:50|regex:/^[A-Za-zÀ-ÿ\s]+$/',
+                'segundo_nome' => 'sometimes|string|min:2|max:50|regex:/^[A-Za-zÀ-ÿ\s]+$|nullable',
+                'apelido' => 'sometimes|required|string|min:3|max:30|alpha_num',
+                'email' => 'sometimes|required|email|max:255|unique:usuarios,email,' . $usuarioAtual->id,
+                'telefone' => 'sometimes|string|max:20|nullable',
+                'numero_documento' => 'sometimes|string|max:20|unique:usuarios,numero_documento,' . $usuarioAtual->id . '|nullable',
+                'data_nascimento' => 'sometimes|date|nullable',
+                'aceite_comunicacoes_email' => 'sometimes|boolean',
+                'aceite_comunicacoes_sms' => 'sometimes|boolean',
+                'aceite_comunicacoes_whatsapp' => 'sometimes|boolean',
+            ], [
+                'primeiro_nome.required' => 'Primeiro nome é obrigatório',
+                'primeiro_nome.min' => 'Primeiro nome deve ter no mínimo 2 caracteres',
+                'primeiro_nome.max' => 'Primeiro nome deve ter no máximo 50 caracteres',
+                'primeiro_nome.regex' => 'Primeiro nome deve conter apenas letras e espaços',
+                'segundo_nome.min' => 'Segundo nome deve ter no mínimo 2 caracteres',
+                'segundo_nome.max' => 'Segundo nome deve ter no máximo 50 caracteres',
+                'segundo_nome.regex' => 'Segundo nome deve conter apenas letras e espaços',
+                'apelido.required' => 'Apelido é obrigatório',
+                'apelido.min' => 'Apelido deve ter no mínimo 3 caracteres',
+                'apelido.max' => 'Apelido deve ter no máximo 30 caracteres',
+                'apelido.alpha_num' => 'Apelido deve conter apenas letras e números',
+                'email.required' => 'Email é obrigatório',
+                'email.email' => 'Email deve ter um formato válido',
+                'email.unique' => 'Este email já está sendo usado por outro usuário',
+                'telefone.max' => 'Telefone deve ter no máximo 20 caracteres',
+                'numero_documento.max' => 'Número do documento deve ter no máximo 20 caracteres',
+                'numero_documento.unique' => 'Este documento já está sendo usado por outro usuário',
+                'data_nascimento.date' => 'Data de nascimento deve ser uma data válida',
+                'aceite_comunicacoes_email.boolean' => 'Aceite de comunicações por email deve ser verdadeiro ou falso',
+                'aceite_comunicacoes_sms.boolean' => 'Aceite de comunicações por SMS deve ser verdadeiro ou falso',
+                'aceite_comunicacoes_whatsapp.boolean' => 'Aceite de comunicações por WhatsApp deve ser verdadeiro ou falso',
+            ]);
+
+            if ($validator->fails()) {
+                Log::warning('AuthController::atualizarPerfil - Dados de validação inválidos', [
+                    'errors' => $validator->errors()
+                ]);
+
+                return response()->json([
+                    'sucesso' => false,
+                    'mensagem' => 'Dados inválidos',
+                    'erros' => $validator->errors()
+                ], 422);
+            }
+
+            $result = $this->authService->atualizarPerfil($request->all());
+
+            Log::info('AuthController::atualizarPerfil - Perfil atualizado com sucesso', [
+                'user_id' => $result['id'] ?? null,
+                'email' => $result['email'] ?? null
+            ]);
+
+            return response()->json([
+                'sucesso' => true,
+                'mensagem' => 'Perfil atualizado com sucesso',
+                'dados' => $result
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('AuthController::atualizarPerfil - Erro ao atualizar perfil', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'sucesso' => false,
+                'mensagem' => $e->getMessage()
+            ], $e->getCode() ?: 500);
         }
     }
 }
