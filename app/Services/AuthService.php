@@ -119,14 +119,55 @@ class AuthService
             throw new \Exception('As senhas não coincidem', 422);
         }
 
-        // Verifica se o email já está em uso
-        $usuarioExistente = Usuario::where('email', $dadosRegistro->email)->first();
+        // Verifica se o email já está em uso por um usuário ativo
+        $usuarioExistente = Usuario::where('email', $dadosRegistro->email)
+            ->where('ativo', true)
+            ->first();
         if ($usuarioExistente) {
             throw new \Exception('Este email já está sendo utilizado', 409);
         }
 
-        // Verifica se o número de documento já está em uso
-        $documentoExistente = Usuario::where('numero_documento', $dadosRegistro->numero_documento)->first();
+        // Verifica se existe um usuário inativo com este documento para reativar
+        $usuarioInativo = Usuario::where('numero_documento', $dadosRegistro->numero_documento)
+            ->where('ativo', false)
+            ->first();
+        if ($usuarioInativo) {
+            // Reativa o usuário existente com os novos dados
+            $dadosUsuario = $dadosRegistro->toArray();
+            $dadosUsuario['ativo'] = true;
+            $dadosUsuario['email_verified_at'] = null; // Reset verificação de email
+            
+            $usuarioInativo->update($dadosUsuario);
+            $novoUsuario = $usuarioInativo->refresh();
+            
+            // Envia email de verificação para o usuário reativado
+            $this->enviarEmailVerificacao($novoUsuario);
+
+            // Gera token JWT para o usuário reativado
+            $token = JWTAuth::fromUser($novoUsuario);
+
+            return [
+                'access_token' => $token,
+                'token_type' => 'bearer',
+                'expires_in' => JWTAuth::factory()->getTTL() * 60,
+                'usuario' => [
+                    'id' => $novoUsuario->id,
+                    'primeiro_nome' => $novoUsuario->primeiro_nome,
+                    'segundo_nome' => $novoUsuario->segundo_nome,
+                    'email' => $novoUsuario->email,
+                    'tipo_usuario' => $novoUsuario->tipo_usuario,
+                    'email_verificado' => $novoUsuario->hasVerifiedEmail(),
+                    'criado_em' => $novoUsuario->created_at,
+                ],
+                'mensagem_verificacao' => 'Sua conta foi reativada! Um email de verificação foi enviado para ' . $novoUsuario->email,
+                'conta_reativada' => true
+            ];
+        }
+
+        // Verifica se o número de documento já está em uso por um usuário ativo
+        $documentoExistente = Usuario::where('numero_documento', $dadosRegistro->numero_documento)
+            ->where('ativo', true)
+            ->first();
         if ($documentoExistente) {
             throw new \Exception('Este número de documento já está sendo utilizado', 409);
         }
